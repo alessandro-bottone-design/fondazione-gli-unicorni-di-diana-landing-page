@@ -1,0 +1,22 @@
+# Dipendenze, build e output dei controlli locali
+/node_modules/
+/dist/
+/coverage/
+/playwright-report/
+/test-results/
+*.tsbuildinfo
+*.log
+
+# Configurazioni e credenziali locali
+/.vercel/
+.env
+.env.*
+!.env.example
+!.env.*.example
+.npmrc.local
+*.pem
+*.key
+
+# Metadati di sistema e backup automatici di Blender
+.DS_Store
+*.blend[0-9]
