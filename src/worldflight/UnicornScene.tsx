@@ -1,20 +1,25 @@
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
-import { Component, useEffect, useMemo, useRef } from 'react'
+import { Component, Suspense, useEffect, useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
 import {
   CanvasTexture, CatmullRomCurve3, Color, Float32BufferAttribute, Fog, Group,
   MathUtils, SRGBColorSpace, TextureLoader, TubeGeometry, Vector3,
 } from 'three'
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { dianaPortrait, illustrations } from '../content'
 import { flightLength } from './index'
 import type { FlightPose } from './index'
+import { dracoLoader } from './draco'
 import { FlightParticles } from './FlightParticles'
+import { MerchStage3D } from './MerchStage3D'
 import { sampleRainbow } from './rainbow'
 
 interface SceneProps {
   pose: FlightPose
+  isGadgetActive: boolean
+  selectedGadgetId: string
+  onSelectGadget: (id: string) => void
+  reducedMotion: boolean
   onReady: () => void
   onUnavailable: () => void
 }
@@ -37,7 +42,6 @@ class SceneErrorBoundary extends Component<{ children: ReactNode; onError: () =>
   }
 }
 
-const draco = new DRACOLoader().setDecoderPath('/media/draco/').setWorkerLimit(1)
 const portraitWidth = 3.66
 const portraitHeight = portraitWidth * (dianaPortrait.height / dianaPortrait.width)
 const media = [dianaPortrait.src, illustrations.unicornHead, illustrations.wingedHeart]
@@ -139,8 +143,16 @@ const fogStartColor = new Color('#f9eef4')
 const fogMidColor = new Color('#eef7f4')
 const fogEndColor = new Color('#f0ecfb')
 
-function World({ pose, onReady, onUnavailable }: SceneProps) {
-  const { nodes } = useLoader(GLTFLoader, '/media/scena-unicorni.glb', (loader) => loader.setDRACOLoader(draco))
+function World({
+  pose,
+  isGadgetActive,
+  selectedGadgetId,
+  onSelectGadget,
+  reducedMotion,
+  onReady,
+  onUnavailable,
+}: SceneProps) {
+  const { nodes } = useLoader(GLTFLoader, '/media/scena-unicorni.glb', (loader) => loader.setDRACOLoader(dracoLoader))
   const textures = useLoader(TextureLoader, media)
   const { camera, gl, invalidate, size } = useThree()
   const fog = useRef<Fog>(null!)
@@ -250,6 +262,16 @@ function World({ pose, onReady, onUnavailable }: SceneProps) {
         heartScale={heartScale}
         heartY={heartY}
       />
+      <Suspense fallback={null}>
+        <MerchStage3D
+          pose={pose}
+          narrow={narrow}
+          isGadgetActive={isGadgetActive}
+          selectedGadgetId={selectedGadgetId}
+          onSelectGadget={onSelectGadget}
+          reducedMotion={reducedMotion}
+        />
+      </Suspense>
     </>
   )
 }

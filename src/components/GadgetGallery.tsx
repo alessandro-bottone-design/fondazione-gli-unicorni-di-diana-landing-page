@@ -1,70 +1,69 @@
-import { useState } from 'react'
-import { ArrowUpRight, Info, MessageCircle } from 'lucide-react'
-import { solidarity, whatsapp } from '@/content'
-import type { SolidarityProduct } from '@/content'
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
-import { TiltedGridHero } from '@/components/ui/tilted-grid-hero'
+import { ArrowUpRight, MessageCircle, Rotate3d } from 'lucide-react'
+import { iban, solidarity, whatsapp } from '@/content'
+import { IbanBox } from '@/components/IbanBox'
 
-type GalleryItem = SolidarityProduct & { title: string }
+export interface GadgetGalleryProps {
+  selectedId: string
+  onSelect: (id: string) => void
+}
 
-const galleryItems: GalleryItem[] = solidarity.map((product) => ({
-  ...product,
-  title: product.label,
-}))
-
-export function GadgetGallery() {
-  const [selectedProduct, setSelectedProduct] = useState<SolidarityProduct | null>(null)
+/** Compact 3D merch HUD overlay synced with the interactive models in UnicornScene. */
+export function GadgetGallery({ selectedId, onSelect }: GadgetGalleryProps) {
+  const active = solidarity.find((item) => item.id === selectedId) ?? solidarity[0]
 
   return (
-    <div className="gadget-showcase">
-      <div className="gadget-showcase-head">
-        <h2 id="gadgets-title">Da portare<br /> <em>con te.</em></h2>
-        <p>Acquisti solidali per sostenere le attività degli Unicorni di Diana. Clicca un articolo per aprire la scheda.</p>
+    <div className="merch-hud">
+      <div className="merch-hud-top">
+        <div className="merch-hud-heading">
+          <h2 id="gadgets-title">Da portare <em>con te.</em></h2>
+          <p className="merch-hud-hint">
+            <Rotate3d size={15} strokeWidth={1.7} />
+            <span>Trascina per ruotare o clicca un modello 3D · {iban.proceedsNote}</span>
+          </p>
+        </div>
+
+        <div className="merch-pills" role="group" aria-label="Scegli un articolo solidale">
+          {solidarity.map((product) => {
+            const isSelected = product.id === active.id
+            return (
+              <button
+                key={product.id}
+                type="button"
+                className={`gadget-chip${isSelected ? ' is-selected' : ''}`}
+                aria-pressed={isSelected}
+                onClick={() => onSelect(product.id)}
+              >
+                {product.label}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      <TiltedGridHero
-        images={galleryItems}
-        aspectRatio={4 / 3}
-        tileHeight={45}
-        axis={50}
-        curve={74}
-        fade={10}
-        speed={4.5}
-        gap={7}
-        paused={selectedProduct !== null}
-        bandLabel="Galleria degli articoli solidali, clicca un prodotto per vedere i dettagli"
-        onImageClick={(item) => setSelectedProduct(item)}
-        className="gadget-ribbon w-full"
-      />
+      <div className="merch-hud-body">
+        <div className="merch-hud-copy">
+          <div className="merch-hud-meta">
+            <h3>{active.label}</h3>
+            <span className="modal-card-price">{active.price}</span>
+            {active.badge && <span className="modal-card-badge">{active.badge}</span>}
+          </div>
+          <p className="merch-hud-desc">{active.description}</p>
+        </div>
 
-      <Dialog open={selectedProduct !== null} onOpenChange={(open) => { if (!open) setSelectedProduct(null) }}>
-        <DialogContent variant="card" className="modal-card gadget-dialog">
-          {selectedProduct && (
-            <>
-              <p className="modal-card-category">{selectedProduct.category}</p>
-              <div className="modal-card-media">
-                <img src={selectedProduct.src} alt={selectedProduct.alt} />
-              </div>
-              <DialogTitle>{selectedProduct.label}</DialogTitle>
-              <DialogDescription>{selectedProduct.description}</DialogDescription>
-              <p className="modal-card-note">
-                <Info size={16} strokeWidth={1.7} />
-                <span>{selectedProduct.availabilityNote}</span>
-              </p>
-              <a
-                className="button button-ink modal-card-cta"
-                href={whatsapp(`Ciao Rossella, vorrei informazioni per acquistare ${selectedProduct.item} degli Unicorni di Diana e sostenere le vostre attività.`)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <MessageCircle size={18} />
-                <span>Chiedi a Rossella su WhatsApp</span>
-                <ArrowUpRight size={16} />
-              </a>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+        <div className="merch-hud-actions">
+          <IbanBox compact />
+          <a
+            className="button button-ink merch-hud-cta"
+            href={whatsapp(`Ciao Rossella, vorrei informazioni per acquistare ${active.item} (${active.price}) degli Unicorni di Diana e sostenere i vostri progetti.`)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <MessageCircle size={18} />
+            <span>Chiedi a Rossella</span>
+            <ArrowUpRight size={16} />
+          </a>
+        </div>
+      </div>
     </div>
   )
 }

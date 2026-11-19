@@ -3,15 +3,16 @@ import type { CSSProperties, MouseEvent, ReactNode } from 'react'
 import {
   ArrowDownRight, ArrowUpRight, Bone,
   Droplet, Facebook, FileText, GraduationCap,
-  Instagram, MessageCircle,
+  Instagram, MessageCircle, Phone,
 } from 'lucide-react'
-import { domAnimation, LazyMotion, MotionConfig } from 'motion/react'
-import { chapters, contacts, credits, donation, foundation, schoolContact, sphereEvents, whatsapp } from './content'
+import { domAnimation, LazyMotion, MotionConfig, useReducedMotion } from 'motion/react'
+import { chapters, contacts, credits, dianaPortrait, donation, foundation, schoolContact, solidarity, sphereEvents, whatsapp } from './content'
 import { FlightStage } from './worldflight/FlightStage'
 import { flightLength, flightStops } from './worldflight'
-import type { FlightPose } from './worldflight'
+import type { FlightPose, StopId } from './worldflight'
 import SphereImageGrid from './components/ui/img-sphere'
 import GadgetGallery from './components/GadgetGallery'
+import { IbanBox } from './components/IbanBox'
 import { useScrollStory } from './worldflight/useScrollStory'
 import { rainbowBorder, rainbowGradient, rainbowPastelWash, rainbowSurface } from './rainbow'
 
@@ -23,17 +24,11 @@ const rainbowVars = {
 } as const
 const rainbowStyle = rainbowVars as CSSProperties
 
-type Mode = 'flight' | 'linear'
-
-function prefersLinear() {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
-}
-
 function ExternalLink({ href, children, className }: { href: string; children: ReactNode; className?: string }) {
   return <a className={className} href={href} target="_blank" rel="noopener noreferrer">{children}</a>
 }
 
-function SiteHeader({ mode, onToggleMode }: { mode: Mode; onToggleMode: () => void }) {
+function SiteHeader({ activeChapter }: { activeChapter: StopId }) {
   return (
     <header className="site-header">
       <div className="shell header-inner">
@@ -41,29 +36,35 @@ function SiteHeader({ mode, onToggleMode }: { mode: Mode; onToggleMode: () => vo
           <img src="/media/marchio.webp" width="38" height="48" alt="" />
         </a>
         <nav className="site-nav" aria-label="Tappe della storia">
-          {chapters.map(({ id, label }) => (
-            <a key={id} href={`#${id}`}>{label}</a>
-          ))}
+          {chapters.map(({ id, label }) => {
+            const isCurrent = id === activeChapter
+            return (
+              <a
+                key={id}
+                href={`#${id}`}
+                className={isCurrent ? 'is-active' : undefined}
+                aria-current={isCurrent ? 'location' : undefined}
+              >
+                {label}
+              </a>
+            )
+          })}
         </nav>
-        <button
-          type="button"
-          className="nav-toggle"
-          aria-pressed={mode === 'linear'}
-          onClick={onToggleMode}
-        >
-          {mode === 'linear' ? 'Torna al viaggio' : 'Versione lineare'}
-        </button>
       </div>
     </header>
   )
 }
 
-function Hero() {
+function Hero({ fallback }: { fallback: boolean }) {
   return (
     <section className="hero" aria-labelledby="hero-title" tabIndex={-1}>
       <div className="shell hero-inner">
         <h1 id="hero-title" aria-label={foundation}>Gli Unicorni <em>di Diana.</em></h1>
-        <div className="hero-stage" aria-hidden="true" />
+        <div className="hero-stage" aria-hidden="true">
+          {fallback && (
+            <img className="fallback-poster" src="/media/unicorno-poster.webp" width={1024} height={1024} alt="" />
+          )}
+        </div>
         <p className="hero-cue">Scorri per scoprire di più</p>
         <p className="hero-credit">
           Scultura «Unicorn 3D» di <ExternalLink href={credits.model}>{credits.author}</ExternalLink>, adattata per questa pagina ·{' '}
@@ -74,7 +75,7 @@ function Hero() {
   )
 }
 
-function Story() {
+function Story({ fallback }: { fallback: boolean }) {
   return (
     <section className="chapter story" aria-labelledby="story-title" tabIndex={-1}>
       <div className="shell chapter-shell">
@@ -86,6 +87,17 @@ function Story() {
             <p>Oggi incontriamo studentesse e studenti, ascoltiamo le loro domande e raccontiamo da dove cominciare.</p>
             <a className="text-link story-next" href="#obiettivi">Scopri come donare <ArrowDownRight size={17} /></a>
           </div>
+          {fallback && (
+            <figure className="story-portrait">
+              <img
+                src={dianaPortrait.src}
+                width={dianaPortrait.width}
+                height={dianaPortrait.height}
+                alt="Ritratto di Diana"
+                decoding="async"
+              />
+            </figure>
+          )}
         </div>
       </div>
     </section>
@@ -104,15 +116,15 @@ function Objectives() {
           <article className="pathway">
             <span className="pathway-icon"><Droplet size={28} strokeWidth={1.5} /></span>
             <h3>Donare sangue</h3>
-            <p>Scopri come funziona la donazione e come trovare un centro trasfusionale.</p>
+            <p>Dai 18 anni, in buona salute, dopo un colloquio medico: scopri come funziona la donazione e trova un centro trasfusionale.</p>
             <ExternalLink className="text-link" href={donation.blood}>Come donare il sangue <ArrowUpRight size={18} /></ExternalLink>
           </article>
           <article className="pathway">
             <span className="pathway-icon"><Bone size={28} strokeWidth={1.5} /></span>
             <h3>Donare midollo osseo</h3>
-            <p>Scopri come dare la tua disponibilità nel Registro italiano dei donatori di midollo osseo.</p>
+            <p>Iscrizione tra i 18 e i 35 anni nel Registro italiano dei donatori: per iniziare basta un prelievo di sangue o un tampone salivare.</p>
             <ExternalLink className="text-link" href={donation.marrow}>Vai al registro donatori <ArrowUpRight size={18} /></ExternalLink>
-            <ExternalLink className="text-link resource-link" href="/media/archivio/guida-midollo.pdf"><FileText size={16} /> Pieghevole della campagna <ArrowUpRight size={16} /></ExternalLink>
+            <ExternalLink className="text-link resource-link" href="/media/archivio/guida-midollo.pdf"><FileText size={16} /> Pieghevole della campagna (PDF, 2,3 MB) <ArrowUpRight size={16} /></ExternalLink>
           </article>
         </div>
         <div className="school-note">
@@ -172,11 +184,11 @@ function Archive({ active }: { active: boolean }) {
   )
 }
 
-function Gadgets() {
+function Gadgets({ selectedId, onSelect }: { selectedId: string; onSelect: (id: string) => void }) {
   return (
     <section className="chapter gadgets" aria-labelledby="gadgets-title" tabIndex={-1}>
       <div className="shell chapter-shell">
-        <GadgetGallery />
+        <GadgetGallery selectedId={selectedId} onSelect={onSelect} />
       </div>
     </section>
   )
@@ -192,9 +204,11 @@ function Contacts() {
             <p className="contact-intro">Segui le iniziative o scrivi a Rossella per sapere da dove partire.</p>
             <div className="contact-actions">
               <ExternalLink className="button button-ink" href={whatsapp('Ciao Rossella, vorrei informazioni sulle attività degli Unicorni di Diana.')}><MessageCircle size={20} /> Scrivi a Rossella <ArrowUpRight size={16} /></ExternalLink>
+              <a className="button button-outline" href={`tel:${contacts.telephone}`}><Phone size={20} /> {contacts.phone}</a>
               <ExternalLink className="button button-outline" href={contacts.instagram}><Instagram size={20} /> Instagram <ArrowUpRight size={16} /></ExternalLink>
               <ExternalLink className="button button-outline" href={contacts.facebook}><Facebook size={20} /> Facebook <ArrowUpRight size={16} /></ExternalLink>
             </div>
+            <IbanBox compact />
           </div>
         </div>
       </div>
@@ -210,16 +224,14 @@ export default function App() {
   const track = useRef<HTMLElement>(null)
   const pose = useRef<FlightPose>({ progress: 0 })
   const [active, setActive] = useState(() => Math.max(0, indexForHash(location.hash)))
-  const [mode, setMode] = useState<Mode>(() => (prefersLinear() ? 'linear' : 'flight'))
-  const flight = mode === 'flight'
+  const [webglUnavailable, setWebglUnavailable] = useState(false)
+  const [selectedGadgetId, setSelectedGadgetId] = useState<string>(solidarity[0].id)
+  const reducedMotion = useReducedMotion() ?? false
+  const flight = !webglUnavailable
 
-  // Any loading or WebGL failure falls back to the linear page instead of an empty stage.
-  const onUnavailable = useCallback(() => { setMode('linear') }, [])
+  // Any loading or WebGL failure falls back cleanly instead of leaving an empty stage.
+  const onUnavailable = useCallback(() => { setWebglUnavailable(true) }, [])
   const controller = useScrollStory(track, flight, pose.current, setActive, onUnavailable)
-
-  const toggleMode = useCallback(() => {
-    setMode((current) => (current === 'flight' ? 'linear' : 'flight'))
-  }, [])
 
   const onReady = useCallback(() => {
     controller.current?.update()
@@ -237,24 +249,6 @@ export default function App() {
       })
     }
   }, [controller])
-
-  const activeRef = useRef(active)
-  activeRef.current = active
-  const firstMode = useRef(true)
-
-  // Switching mode keeps the chapter the visitor was reading.
-  useEffect(() => {
-    if (firstMode.current) {
-      firstMode.current = false
-      return
-    }
-    const id = flightStops[activeRef.current].id
-    if (mode === 'linear') {
-      document.getElementById(id)?.scrollIntoView({ block: 'start' })
-    } else {
-      goTo(activeRef.current)
-    }
-  }, [mode, goTo])
 
   useLayoutEffect(() => {
     const rootStyle = document.documentElement.style
@@ -296,24 +290,45 @@ export default function App() {
   }
 
   const archiveStop = flightStops.findIndex(({ id }) => id === 'eventi')
-  const panels = [<Hero />, <Story />, <Objectives />, <Archive active={!flight || active === archiveStop} />, <Gadgets />, <Contacts />]
   const activeChapter = flightStops[active].id
+  const panels = [
+    <Hero fallback={webglUnavailable} />,
+    <Story fallback={webglUnavailable} />,
+    <Objectives />,
+    <Archive active={!flight || active === archiveStop} />,
+    <Gadgets selectedId={selectedGadgetId} onSelect={setSelectedGadgetId} />,
+    <Contacts />,
+  ]
 
   return (
     <LazyMotion features={domAnimation} strict>
       <MotionConfig reducedMotion="user">
         <div
-          className={flight ? 'flight-mode' : 'linear-mode'}
+          className={flight ? 'flight-mode' : 'fallback-mode'}
           data-chapter={activeChapter}
-          data-mode={mode}
           onClick={navigate}
           style={rainbowStyle}
         >
           <div className="page-atmosphere" aria-hidden="true" />
           <a className="skip-link" href="#inizio">Vai al contenuto</a>
-          <SiteHeader mode={mode} onToggleMode={toggleMode} />
-          {flight && <FlightStage pose={pose.current} onReady={onReady} onUnavailable={onUnavailable} />}
+          <SiteHeader activeChapter={activeChapter} />
+          {flight && (
+            <FlightStage
+              pose={pose.current}
+              isGadgetActive={activeChapter === 'gadget'}
+              selectedGadgetId={selectedGadgetId}
+              onSelectGadget={setSelectedGadgetId}
+              reducedMotion={reducedMotion}
+              onReady={onReady}
+              onUnavailable={onUnavailable}
+            />
+          )}
           <main ref={track} className="flight-track" style={{ '--flight-length': flightLength } as CSSProperties}>
+            {webglUnavailable && (
+              <p className="shell fallback-notice" role="status">
+                La scena 3D non è disponibile su questo dispositivo: puoi comunque consultare tutti i contenuti della Fondazione.
+              </p>
+            )}
             {flightStops.map(({ id, arrival }, index) => (
               <div className="flight-stop" id={id} key={id} style={{ '--flight-arrival': arrival } as CSSProperties}>
                 <div className={`flight-panel${flight && active === index ? ' is-active' : ''}`} inert={flight && active !== index}>

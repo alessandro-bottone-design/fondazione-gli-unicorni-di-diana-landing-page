@@ -373,8 +373,12 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
               <button
                 key={image.id}
                 type="button"
-                aria-label={image.title ? `${image.title}, apri i dettagli` : image.alt}
-                className="sphere-node group absolute cursor-pointer select-none transition-transform duration-200 ease-out"
+                aria-label={
+                  image.title
+                    ? `${image.title}${image.isPlaceholder ? ' (foto in arrivo)' : ''}, apri i dettagli`
+                    : image.alt
+                }
+                className={`sphere-node${image.isPlaceholder ? ' sphere-node--placeholder' : ''} group absolute cursor-pointer select-none transition-transform duration-200 ease-out`}
                 style={{
                   width: `${imageSize}px`,
                   height: `${imageSize}px`,
@@ -409,15 +413,26 @@ const SphereImageGrid: React.FC<SphereImageGridProps> = ({
       </div>
 
       <details className="archive-index">
-        <summary>Elenco degli eventi</summary>
+        <summary>Elenco degli eventi ({uniqueImages.length})</summary>
         <ul>
-          {uniqueImages.map((image) => (
-            <li key={image.id}>
-              <button type="button" onClick={() => setSelectedImage(image)}>
-                {image.title ?? image.alt}
-              </button>
-            </li>
-          ))}
+          {uniqueImages.map((image) => {
+            const meta = [image.category, image.date ?? image.place].filter(Boolean).join(' · ')
+            return (
+              <li key={image.id}>
+                <button type="button" onClick={() => setSelectedImage(image)}>
+                  <span className="archive-index-title">{image.title ?? image.alt}</span>
+                  {(meta || image.isPlaceholder) && (
+                    <span className="archive-index-meta">
+                      {meta}
+                      {image.isPlaceholder && (
+                        <span className="archive-index-badge">Foto in arrivo</span>
+                      )}
+                    </span>
+                  )}
+                </button>
+              </li>
+            )
+          })}
         </ul>
       </details>
 

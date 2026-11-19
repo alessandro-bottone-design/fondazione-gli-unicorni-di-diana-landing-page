@@ -76,28 +76,54 @@ export const events = [
   },
 ]
 
-export const solidarity = [
+export const iban = {
+  code: 'IT57H0200803446000106388833',
+  beneficiary: 'GLI UNICORNI DI DIANA ODV',
+  proceedsNote: 'Il ricavato sarà interamente devoluto ai progetti dell’associazione.',
+} as const
+
+export interface SolidarityProduct {
+  id: string
+  label: string
+  item: string
+  icon: 'shirt' | 'sweatshirt' | 'hat' | 'book'
+  category: string
+  price: string
+  badge?: string
+  glb: string
+  src: string
+  alt: string
+  description: string
+  availabilityNote: string
+}
+
+export const solidarity: readonly SolidarityProduct[] = [
   {
     id: 't-shirt',
     label: 'T-shirt',
     item: 'la T-shirt',
     icon: 'shirt',
     category: 'Acquisto solidale',
+    price: '10 €',
+    badge: 'Novità',
+    glb: '/media/gadget/t-shirt.glb',
     src: '/media/gadget/t-shirt.webp',
-    alt: 'T-shirt in cotone chiaro della Fondazione Gli Unicorni di Diana con il marchio sul petto',
-    description: 'T-shirt con il simbolo degli Unicorni di Diana: indossarla aiuta a far conoscere la donazione di sangue e midollo osseo e sostiene i progetti della Fondazione.',
-    availabilityNote: 'Chiedi a Rossella taglie disponibili, colori e modalità di consegna su WhatsApp.',
+    alt: 'T-shirt bianche ufficiali Gli Unicorni di Diana con logo sul petto e variante «grazie a me oggi un bimbo sorriderà»',
+    description: 'T-shirt bianca in due grafiche ufficiali (ruota il modello 3D per vedere entrambi i lati): stampa «grazie a me oggi un bimbo sorriderà · FALLO ANCHE TU!» e logo classico degli Unicorni di Diana.',
+    availabilityNote: 'Chiedi a Rossella taglie disponibili, variante preferita e modalità di consegna su WhatsApp.',
   },
   {
     id: 'felpe',
-    label: 'Felpe',
-    item: 'le felpe',
+    label: 'Felpa',
+    item: 'la felpa',
     icon: 'sweatshirt',
     category: 'Acquisto solidale',
+    price: '20 €',
+    glb: '/media/gadget/felpa.glb',
     src: '/media/gadget/felpa.webp',
-    alt: 'Felpa lilla della Fondazione Gli Unicorni di Diana con il marchio ricamato',
-    description: 'Felpa morbida con il segno degli Unicorni di Diana, pensata per accompagnare incontri, iniziative e giornate dedicate alla cultura del dono.',
-    availabilityNote: 'Chiedi a Rossella taglie disponibili, modelli e modalità di consegna su WhatsApp.',
+    alt: 'Felpa bianca girocollo ufficiale Associazione Gli Unicorni di Diana con il marchio sul petto',
+    description: 'Felpa bianca girocollo con il simbolo ufficiale Associazione Gli Unicorni di Diana, pensata per accompagnare incontri, iniziative e giornate dedicate alla cultura del dono.',
+    availabilityNote: 'Chiedi a Rossella taglie disponibili e modalità di consegna su WhatsApp.',
   },
   {
     id: 'cappello',
@@ -105,25 +131,27 @@ export const solidarity = [
     item: 'il cappello',
     icon: 'hat',
     category: 'Acquisto solidale',
+    price: '5 €',
+    glb: '/media/gadget/cappello.glb',
     src: '/media/gadget/cappello.webp',
-    alt: 'Cappello della Fondazione Gli Unicorni di Diana con il marchio dell’unicorno ricamato sul davanti',
-    description: 'Cappello con il marchio ricamato della Fondazione: un gesto semplice per portare con te il ricordo di Diana e sostenere le attività nelle scuole e in ospedale.',
+    alt: 'Cappello bianco ufficiale Associazione Gli Unicorni di Diana con il marchio sul davanti',
+    description: 'Cappello bianco con il logo ufficiale dell’Associazione Gli Unicorni di Diana: un gesto semplice per portare con te il ricordo di Diana e sostenere i progetti solidali.',
     availabilityNote: 'Chiedi a Rossella disponibilità e modalità di ritiro o spedizione su WhatsApp.',
   },
   {
     id: 'libro',
     label: 'Libro',
-    item: 'il libro',
+    item: 'il libro «Sulle mie spalle, dentro il mio cuore»',
     icon: 'book',
     category: 'Acquisto solidale',
+    price: '20 €',
+    glb: '/media/gadget/libro.glb',
     src: '/media/gadget/libro.webp',
-    alt: 'Libro della Fondazione Gli Unicorni di Diana con il simbolo dell’unicorno in copertina',
-    description: 'Il libro dedicato alla storia di Diana e al percorso nato nel suo ricordo, per sostenere gli incontri di sensibilizzazione con ragazze e ragazzi.',
+    alt: 'Copertina del libro «Sulle mie spalle, dentro il mio cuore — Rinascere lungo il Cammino per Santiago» di Michele Bisceglia',
+    description: '«Sulle mie spalle, dentro il mio cuore — Rinascere lungo il Cammino per Santiago» di Michele Bisceglia (Franco Di Mauro Editore): l’acquisto sostiene direttamente i progetti dell’associazione.',
     availabilityNote: 'Chiedi a Rossella disponibilità delle copie e come riceverlo su WhatsApp.',
   },
-] as const
-
-export type SolidarityProduct = (typeof solidarity)[number]
+]
 
 export const credits = {
   author: 'Soufiane Oujihi',

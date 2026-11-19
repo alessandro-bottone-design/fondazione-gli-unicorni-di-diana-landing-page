@@ -3,3 +3,5 @@ dist/
 originali/
 .DS_Store
 *.local
+.vercel
+.env*
