@@ -23,7 +23,11 @@ export function createScrollStory(track: HTMLElement, pose: FlightPose, setActiv
       previous = index
       setActive(index)
     }
-    panels[index]?.style.setProperty('--flight-opacity', String(0.63 + 0.37 * Math.min(entrance, exit)))
+    panels[index]?.style.setProperty('--flight-opacity', String(0.9 + 0.1 * Math.min(entrance, exit)))
+    if (index === 0) {
+      const departure = gsap.utils.clamp(0, 1, (distance - .18) / .38)
+      panels[0]?.style.setProperty('--hero-copy-opacity', String(1 - departure))
+    }
     pose.progress = progress
     pose.invalidate?.()
   }
@@ -46,6 +50,7 @@ export function createScrollStory(track: HTMLElement, pose: FlightPose, setActiv
     update,
     destroy() {
       trigger.kill()
+      panels[0]?.style.removeProperty('--hero-copy-opacity')
       panels.forEach((panel) => panel.style.removeProperty('--flight-opacity'))
     },
   }

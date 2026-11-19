@@ -1,11 +1,11 @@
 # Gli Unicorni di Diana
 
-- Tono. Viola, giovane, intimo e concreto. Il pubblico di riferimento sono gli studenti e chi si avvicina alla donazione dai 18 anni.
+- Tono. Equilibrio 50% arcobaleno e 50% viola: giovane, intimo e luminoso. Il pubblico di riferimento sono gli studenti e chi si avvicina alla donazione dai 18 anni.
 - Percorso. Hero, Storia, Obiettivi, Eventi, Gadget, Contatti.
 - Energia. Apertura riconoscibile, pausa sul ritratto, biforcazione pratica, sosta più lunga nell’archivio, finale raccolto.
 - Momento da ricordare. «La storia diventa comunità».
-- Gesto visivo. «Scia degli unicorni». I due unicorni aprono la traiettoria che porta dal ritratto alle foto d’archivio e si chiude nel cuore alato.
-- Direzione visiva. Un fondo viola, tipografia contemporanea, foto vere, due sculture dall’asset Blender, senza barra laterale né footer.
+- Gesto visivo. «Scia degli unicorni». I due unicorni aprono la traiettoria arcobaleno continua che porta dal ritratto alle foto d’archivio e si chiude nel cuore alato.
+- Direzione visiva. Sfondo continuo pastello arcobaleno (e dettagli arcobaleno saturi su scie, particelle, orbite, cornici e bordi) abbinato a card lilla satinato, testi, badge e bottoni viola, tipografia contemporanea, foto vere e due sculture dall’asset Blender, senza barra laterale né footer.
 - Continuità. «Un solo mondo 3D». Su smartphone, «Stessa immersione del desktop» sui dispositivi compatibili.
 - Asset. Scena esportata da Unicorni.blend, ritratto di Diana, cinque immagini d’archivio, silhouette, marchio e pieghevole per il midollo. La chiusura dà priorità alla richiesta «Far seguire il profilo instagram e facebook e scrivere a Rossella.»
 

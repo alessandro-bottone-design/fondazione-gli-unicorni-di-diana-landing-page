@@ -1,8 +1,9 @@
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router'
-import '@fontsource/inter/latin-400.css'
-import '@fontsource/inter/latin-600.css'
-import '@fontsource/newsreader/latin-400-italic.css'
+import '@fontsource/fraunces/latin-400.css'
+import '@fontsource/fraunces/latin-400-italic.css'
+import '@fontsource/manrope/latin-400.css'
+import '@fontsource/manrope/latin-600.css'
 import App from './App'
 import './styles.css'
 

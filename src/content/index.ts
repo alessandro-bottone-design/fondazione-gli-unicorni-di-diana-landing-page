@@ -1,5 +1,19 @@
 export const foundation = 'Fondazione Gli Unicorni di Diana'
 
+export const dianaPortrait = { src: '/media/ritratto-diana.webp', width: 916, height: 1020 } as const
+
+export const illustrations = {
+  unicornHead: '/media/unicorn-line.webp',
+  flyingUnicorn: '/media/unicorn-full-line.webp',
+  wingedHeart: '/media/winged-heart-line.webp',
+} as const
+
+// Used for the events that do not have their own photograph yet.
+export const placeholderMedia = {
+  src: '/media/silhouette.webp',
+  alt: 'Silhouette di un unicorno, immagine segnaposto',
+} as const
+
 export const contacts = {
   phone: '+39 338 297 4641',
   telephone: '+393382974641',
@@ -14,6 +28,7 @@ export function whatsapp(message: string) {
 export const schoolContact = whatsapp('Ciao Rossella, vorrei proporre un incontro sulla donazione di sangue e midollo osseo nella mia scuola.')
 
 export const chapters = [
+  { id: 'inizio', label: 'Inizio' },
   { id: 'storia', label: 'Storia' },
   { id: 'obiettivi', label: 'Obiettivi' },
   { id: 'eventi', label: 'Eventi' },
@@ -61,20 +76,57 @@ export const events = [
   },
 ]
 
-export const gifts = [
-  { label: 'Penne', icon: 'pen' },
-  { label: 'Spillette', icon: 'pin' },
-  { label: 'Braccialetti', icon: 'bracelet' },
+export const solidarity = [
+  {
+    id: 't-shirt',
+    label: 'T-shirt',
+    item: 'la T-shirt',
+    icon: 'shirt',
+    category: 'Acquisto solidale',
+    src: '/media/gadget/t-shirt.webp',
+    alt: 'T-shirt in cotone chiaro della Fondazione Gli Unicorni di Diana con il marchio sul petto',
+    description: 'T-shirt con il simbolo degli Unicorni di Diana: indossarla aiuta a far conoscere la donazione di sangue e midollo osseo e sostiene i progetti della Fondazione.',
+    availabilityNote: 'Chiedi a Rossella taglie disponibili, colori e modalità di consegna su WhatsApp.',
+  },
+  {
+    id: 'felpe',
+    label: 'Felpe',
+    item: 'le felpe',
+    icon: 'sweatshirt',
+    category: 'Acquisto solidale',
+    src: '/media/gadget/felpa.webp',
+    alt: 'Felpa lilla della Fondazione Gli Unicorni di Diana con il marchio ricamato',
+    description: 'Felpa morbida con il segno degli Unicorni di Diana, pensata per accompagnare incontri, iniziative e giornate dedicate alla cultura del dono.',
+    availabilityNote: 'Chiedi a Rossella taglie disponibili, modelli e modalità di consegna su WhatsApp.',
+  },
+  {
+    id: 'cappello',
+    label: 'Cappello',
+    item: 'il cappello',
+    icon: 'hat',
+    category: 'Acquisto solidale',
+    src: '/media/gadget/cappello.webp',
+    alt: 'Cappello della Fondazione Gli Unicorni di Diana con il marchio dell’unicorno ricamato sul davanti',
+    description: 'Cappello con il marchio ricamato della Fondazione: un gesto semplice per portare con te il ricordo di Diana e sostenere le attività nelle scuole e in ospedale.',
+    availabilityNote: 'Chiedi a Rossella disponibilità e modalità di ritiro o spedizione su WhatsApp.',
+  },
+  {
+    id: 'libro',
+    label: 'Libro',
+    item: 'il libro',
+    icon: 'book',
+    category: 'Acquisto solidale',
+    src: '/media/gadget/libro.webp',
+    alt: 'Libro della Fondazione Gli Unicorni di Diana con il simbolo dell’unicorno in copertina',
+    description: 'Il libro dedicato alla storia di Diana e al percorso nato nel suo ricordo, per sostenere gli incontri di sensibilizzazione con ragazze e ragazzi.',
+    availabilityNote: 'Chiedi a Rossella disponibilità delle copie e come riceverlo su WhatsApp.',
+  },
 ] as const
 
-export const solidarity = [
-  { label: 'T-shirt', item: 'la T-shirt', icon: 'shirt' },
-  { label: 'Felpe', item: 'le felpe', icon: 'sweatshirt' },
-  { label: 'Cappello', item: 'il cappello', icon: 'hat' },
-  { label: 'Libro', item: 'il libro', icon: 'book' },
-] as const
+export type SolidarityProduct = (typeof solidarity)[number]
 
 export const credits = {
+  author: 'Soufiane Oujihi',
   model: 'https://sketchfab.com/3d-models/unicorn-3d-c89d06fe31694234bee10e42c2919299',
   license: 'https://creativecommons.org/licenses/by/4.0/',
 }
@@ -86,3 +138,70 @@ export const archiveMedia = [
   { file: 'pasqua-solidale', label: 'Pasqua solidale', caption: 'La locandina della raccolta solidale con le uova di Pasqua.' },
   { file: 'natale-solidale', label: 'Natale solidale', caption: 'La locandina della raccolta solidale con i panettoni. Disponibilità e prezzi si riferiscono alla campagna illustrata.' },
 ] as const
+
+function archivePath(file: string, thumb = false) {
+  return `/media/archivio/${file}${thumb ? '-thumb' : ''}.webp`
+}
+
+const baseSphereEvents = [
+  {
+    id: events[0].id,
+    title: events[0].title,
+    category: events[0].type,
+    place: events[0].place,
+    date: events[0].date,
+    dateTime: events[0].dateTime,
+    summary: events[0].summary,
+    description: events[0].detail,
+    sourceLabel: events[0].source,
+    url: events[0].url,
+    src: archivePath(archiveMedia[0].file, true),
+    fullSrc: archivePath(archiveMedia[0].file),
+    alt: archiveMedia[0].label,
+  },
+  {
+    id: events[1].id,
+    title: events[1].title,
+    category: events[1].type,
+    place: events[1].place,
+    summary: events[1].summary,
+    description: events[1].detail,
+    sourceLabel: events[1].source,
+    url: events[1].url,
+    src: placeholderMedia.src,
+    fullSrc: placeholderMedia.src,
+    alt: placeholderMedia.alt,
+    isPlaceholder: true,
+  },
+  {
+    id: events[2].id,
+    title: events[2].title,
+    category: events[2].type,
+    place: events[2].place,
+    summary: events[2].summary,
+    description: events[2].detail,
+    sourceLabel: events[2].source,
+    url: events[2].url,
+    src: placeholderMedia.src,
+    fullSrc: placeholderMedia.src,
+    alt: placeholderMedia.alt,
+    isPlaceholder: true,
+  },
+  ...archiveMedia.slice(1).map(({ file, label, caption }) => ({
+    id: file,
+    title: label,
+    category: file === 'settimana-midollo' || file === 'donazione-sangue' ? 'Campagna' : 'Solidarietà',
+    summary: caption,
+    src: archivePath(file, true),
+    fullSrc: archivePath(file),
+    alt: label,
+  })),
+]
+
+export const sphereEvents = Array.from({ length: 28 }, (_, index) => {
+  const item = baseSphereEvents[index % baseSphereEvents.length]
+  return {
+    ...item,
+    id: `${item.id}-${index + 1}`,
+  }
+})

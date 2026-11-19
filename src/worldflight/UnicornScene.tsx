@@ -1,16 +1,17 @@
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
+import { Component, useEffect, useMemo, useRef } from 'react'
+import type { ReactNode } from 'react'
 import {
-  BufferGeometry, CatmullRomCurve3, Float32BufferAttribute, Group, Line, LineBasicMaterial,
-  MathUtils, MeshBasicMaterial, Shape, ShapeGeometry, SRGBColorSpace, TextureLoader, Vector3,
+  CanvasTexture, CatmullRomCurve3, Color, Float32BufferAttribute, Fog, Group,
+  MathUtils, SRGBColorSpace, TextureLoader, TubeGeometry, Vector3,
 } from 'three'
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
-import { SVGLoader } from 'three/addons/loaders/SVGLoader.js'
-import { archiveMedia } from '../content'
+import { dianaPortrait, illustrations } from '../content'
 import { flightLength } from './index'
 import type { FlightPose } from './index'
-import { heartPaths } from '../components/Art'
+import { FlightParticles } from './FlightParticles'
+import { sampleRainbow } from './rainbow'
 
 interface SceneProps {
   pose: FlightPose
@@ -18,8 +19,28 @@ interface SceneProps {
   onUnavailable: () => void
 }
 
+// The Canvas renders its children in its own root, so this boundary has to live
+// inside it: a failed GLB load never reaches the boundary around the Canvas.
+class SceneErrorBoundary extends Component<{ children: ReactNode; onError: () => void }, { failed: boolean }> {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  componentDidCatch() {
+    this.props.onError()
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children
+  }
+}
+
 const draco = new DRACOLoader().setDecoderPath('/media/draco/').setWorkerLimit(1)
-const media = ['/media/diana.webp', ...archiveMedia.map(({ file }) => `/media/archivio/${file}-thumb.webp`)]
+const portraitWidth = 3.66
+const portraitHeight = portraitWidth * (dianaPortrait.height / dianaPortrait.width)
+const media = [dianaPortrait.src, illustrations.unicornHead, illustrations.wingedHeart]
 
 type Position = [number, number, number]
 type Keyframe = { at: number; eye: Position; target: Position }
@@ -42,83 +63,100 @@ const route: Keyframe[] = [
 
 const smooth = (value: number, start: number, end: number) => MathUtils.smoothstep(value, start, end)
 
-function makeArch() {
-  const shape = new Shape()
-  shape.moveTo(-.5, -.07)
-  shape.bezierCurveTo(-.5, .27, -.3, .5, 0, .5)
-  shape.bezierCurveTo(.3, .5, .5, .27, .5, -.07)
-  shape.bezierCurveTo(.5, -.36, .32, -.5, 0, -.5)
-  shape.bezierCurveTo(-.32, -.5, -.5, -.36, -.5, -.07)
-  const geometry = new ShapeGeometry(shape, 32)
-  const uv = geometry.attributes.uv
-  for (let index = 0; index < uv.count; index++) {
-    uv.setXY(index, .5 + uv.getX(index) * .66, uv.getY(index) + .5)
+function makePortraitFadeTexture() {
+  const canvas = document.createElement('canvas')
+  canvas.width = 4
+  canvas.height = 128
+  const context = canvas.getContext('2d')
+  if (context) {
+    const gradient = context.createLinearGradient(0, 0, 0, canvas.height)
+    gradient.addColorStop(0, '#ffffff')
+    gradient.addColorStop(.84, '#ffffff')
+    gradient.addColorStop(1, '#000000')
+    context.fillStyle = gradient
+    context.fillRect(0, 0, canvas.width, canvas.height)
   }
-  return geometry
-}
-
-function makeHeart() {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg">${heartPaths.map((path) => `<path d="${path}"/>`).join('')}</svg>`
-  return new SVGLoader().parse(svg).paths.map(({ subPaths }) => {
-    const points = subPaths[0].getPoints(24).map(({ x, y }) => new Vector3((x - 284) / 77, (200 - y) / 77, 0))
-    return new Line(
-      new BufferGeometry().setFromPoints(points),
-      new LineBasicMaterial({ color: '#edc9ff', fog: false }),
-    )
-  })
+  return new CanvasTexture(canvas)
 }
 
 function makeStars() {
+  const count = 320
   const positions = []
-  for (let index = 0; index < 320; index++) {
+  const colors = new Float32Array(count * 3)
+  const color = new Color()
+  const pearl = new Color('#f7f0fd')
+  for (let index = 0; index < count; index++) {
     const x = Math.sin(index * 17.381) * (6 + index % 8)
     const y = Math.cos(index * 4.763) * (2 + index % 6)
     const z = 6 - (index * 13.71) % 75
     positions.push(x, y, z)
+    sampleRainbow((index % 23) / 22, color).lerp(pearl, .25).toArray(colors, index * 3)
   }
-  return new Float32BufferAttribute(positions, 3)
+  return {
+    positions: new Float32BufferAttribute(positions, 3),
+    colors: new Float32BufferAttribute(colors, 3),
+  }
 }
 
+const triangleWave = (value: number) => 1 - Math.abs((((value % 2) + 2) % 2) - 1)
+
 function makeTrail(side: number, endY: number) {
-  return new CatmullRomCurve3([
+  const curve = new CatmullRomCurve3([
     [side * 6, -.12, .15], [side * 2.7, -1.02, -3], [side * .7, -1.7, -7],
     [side * 2.2, -1.87, -13], [side * 3.5, -1.42, -18], [side * .85, -1.8, -24],
     [side * 4.4, -.92, -32], [side * 5.5, -.78, -36], [side * 2.8, -1.46, -40],
     [side * 1.5, -1.7, -46], [side * .3, -1.15, -51], [0, endY, -56.95],
   ].map(([x, y, z]) => new Vector3(x, y, z)))
+  const geometry = new TubeGeometry(curve, 220, .028, 5, false)
+  const { position } = geometry.attributes
+  const colors = new Float32Array(position.count * 4)
+  const color = new Color()
+
+  for (let index = 0; index < position.count; index++) {
+    const depth = -position.getZ(index)
+    const towardCenter = (1 - smooth(Math.abs(position.getX(index)), 1.65, 3.9)) * .5
+    const openSample = side < 0 ? towardCenter : 1 - towardCenter
+    const flightSample = triangleWave(depth / 13 + (side > 0 ? .6 : 0))
+    const towardHeart = smooth(depth, 46, 57) * .5
+    const closeSample = side < 0 ? towardHeart : 1 - towardHeart
+
+    const progress = MathUtils.lerp(
+      MathUtils.lerp(openSample, flightSample, smooth(depth, 5, 11)),
+      closeSample,
+      smooth(depth, 44, 52),
+    )
+    sampleRainbow(progress, color)
+    color.toArray(colors, index * 4)
+    // Near the end of the flight, leave the brightest part of the trail next to the heart.
+    const closing = smooth(depth, 45, 49) * (1 - smooth(depth, 51, 55))
+    colors[index * 4 + 3] = 1 - closing * .56
+  }
+  geometry.setAttribute('color', new Float32BufferAttribute(colors, 4))
+  return geometry
 }
 
-const desktopPhotos: Position[] = [
-  [-4.65, .38, -34], [-2.44, 1.02, -34.35], [0, 1.51, -34.6],
-  [2.43, 1.02, -34.34], [4.64, .38, -34],
-]
-const mobilePhotos: Position[] = [
-  [-1.15, 1.32, -34], [0, 1.64, -34.22], [1.15, 1.32, -34],
-  [-.64, -.06, -34.1], [.64, -.06, -34.1],
-]
+const fogStartColor = new Color('#f9eef4')
+const fogMidColor = new Color('#eef7f4')
+const fogEndColor = new Color('#f0ecfb')
 
 function World({ pose, onReady, onUnavailable }: SceneProps) {
   const { nodes } = useLoader(GLTFLoader, '/media/scena-unicorni.glb', (loader) => loader.setDRACOLoader(draco))
   const textures = useLoader(TextureLoader, media)
   const { camera, gl, invalidate, size } = useThree()
+  const fog = useRef<Fog>(null!)
   const left = useRef<Group>(null!)
   const right = useRef<Group>(null!)
   const portrait = useRef<Group>(null!)
-  const photoGroups = useRef<(Group | null)[]>([])
-  const photoMaterials = useRef<(MeshBasicMaterial | null)[]>([])
-  const photoFrames = useRef<(MeshBasicMaterial | null)[]>([])
   const ready = useRef(false)
   const aim = useMemo(() => new Vector3(), [])
-  const arch = useMemo(makeArch, [])
-  const heart = useMemo(makeHeart, [])
+  const portraitFadeTexture = useMemo(makePortraitFadeTexture, [])
   const stars = useMemo(makeStars, [])
   const narrow = size.width / Math.max(1, size.height) < 1
   const sceneAspect = size.width / Math.max(1, size.height)
   const sideScale = Math.min(1, sceneAspect / 1.4)
-  const photoPositions = narrow ? mobilePhotos : desktopPhotos
-  const heartScale = Math.min(.74, sceneAspect * .83)
-  const heartY = narrow ? .76 : .59
-  const trailEnd = heartY - (118 / 77) * heartScale
+  const heartScale = Math.min(4.55, sceneAspect * 4.55)
+  const heartY = narrow ? 1.36 : .94
+  const trailEnd = heartY - heartScale * .29 - .12
   const trails = useMemo(() => [-1, 1].map((side) => makeTrail(side, trailEnd)), [trailEnd])
 
   useEffect(() => {
@@ -133,12 +171,19 @@ function World({ pose, onReady, onUnavailable }: SceneProps) {
   }, [gl, invalidate, onUnavailable, pose, textures])
 
   useEffect(() => () => {
-    arch.dispose()
-    heart.forEach((line) => { line.geometry.dispose(); line.material.dispose() })
-  }, [arch, heart])
+    portraitFadeTexture.dispose()
+  }, [portraitFadeTexture])
+  useEffect(() => () => trails.forEach((trail) => trail.dispose()), [trails])
 
   useFrame(() => {
     const distance = pose.progress * flightLength
+    if (fog.current) {
+      if (pose.progress < .5) {
+        fog.current.color.copy(fogStartColor).lerp(fogMidColor, pose.progress * 2)
+      } else {
+        fog.current.color.copy(fogMidColor).lerp(fogEndColor, (pose.progress - .5) * 2)
+      }
+    }
     const nextIndex = route.findIndex((keyframe) => keyframe.at > distance)
     const end = route[nextIndex < 0 ? route.length - 1 : nextIndex]
     const start = route[nextIndex < 0 ? route.length - 2 : Math.max(0, nextIndex - 1)]
@@ -160,25 +205,6 @@ function World({ pose, onReady, onUnavailable }: SceneProps) {
     right.current.visible = distance < 1.62
     portrait.current.visible = distance < 1.72
 
-    photoGroups.current.forEach((group, index) => {
-      if (!group) return
-      const arrival = smooth(distance, 2.92 + index * .115, 3.26 + index * .115)
-      const leave = 1 - smooth(distance, 4.27, 4.5)
-      const material = photoMaterials.current[index]
-      const frame = photoFrames.current[index]
-      group.visible = arrival * leave > .005
-      group.position.y = photoPositions[index][1] - (1 - arrival) * .65
-      if (material) material.opacity = arrival * leave
-      if (frame) frame.opacity = arrival * leave * .94
-    })
-
-    const drawn = smooth(distance, 5.27, 6.06)
-    heart.forEach((line, index) => {
-      const length = line.geometry.attributes.position.count
-      const segment = MathUtils.clamp(drawn * 1.65 - index * .28, 0, 1)
-      line.geometry.setDrawRange(0, Math.ceil(length * segment))
-    })
-
     if (!ready.current) {
       ready.current = true
       onReady()
@@ -186,63 +212,44 @@ function World({ pose, onReady, onUnavailable }: SceneProps) {
   })
 
   const statueScale = narrow ? .52 : .92
-  const portraitScale = narrow ? .58 : .96
+  const portraitScale = narrow ? .52 : .96
 
   return (
     <>
-      <fog attach="fog" args={['#3b1768', 15, 39]} />
-      <ambientLight color="#e5cafa" intensity={1.12} />
-      <directionalLight color="#fff0fd" position={[-4, 7, 7]} intensity={2.15} />
-      <directionalLight color="#c9acff" position={[2, 4, -6]} intensity={2.3} />
+      <fog ref={fog} attach="fog" args={['#f9eef4', 22, 54]} />
+      <ambientLight color="#f9f3ff" intensity={1.18} />
+      <directionalLight color="#fff8fc" position={[-4, 7, 7]} intensity={2.2} />
+      <directionalLight color="#cde8ff" position={[2, 4, -6]} intensity={2.1} />
       <points>
-        <bufferGeometry><primitive object={stars} attach="attributes-position" /></bufferGeometry>
-        <pointsMaterial color="#d5b2f7" size={.041} transparent opacity={.35} depthWrite={false} />
+        <bufferGeometry>
+          <primitive object={stars.positions} attach="attributes-position" />
+          <primitive object={stars.colors} attach="attributes-color" />
+        </bufferGeometry>
+        <pointsMaterial vertexColors size={.048} transparent opacity={.42} depthWrite={false} />
       </points>
       <group scale={[narrow ? .61 : 1, 1, 1]}>
         {trails.map((trail, index) => (
-          <mesh key={index}>
-            <tubeGeometry args={[trail, 220, .02, 5, false]} />
-            <meshBasicMaterial color={index ? '#ac72e2' : '#ddabff'} transparent opacity={index ? .65 : .84} />
+          <mesh key={index} geometry={trail}>
+            <meshBasicMaterial vertexColors transparent opacity={index ? .86 : .94} />
           </mesh>
         ))}
       </group>
       <group ref={left} scale={statueScale}><primitive object={nodes.UnicornoSinistra} /></group>
       <group ref={right} scale={statueScale}><primitive object={nodes.UnicornoDestra} /></group>
       <group ref={portrait} position={[0, .03, .18]} scale={portraitScale}>
-        <mesh geometry={arch} scale={[3.76, 4.12, 1]} renderOrder={3}>
-          <meshBasicMaterial color="#deb4ff" fog={false} transparent depthTest={false} depthWrite={false} />
-        </mesh>
-        <mesh geometry={arch} scale={[3.66, 4.02, 1]} renderOrder={4}>
-          <meshBasicMaterial map={textures[0]} toneMapped={false} fog={false} transparent depthTest={false} depthWrite={false} />
+        <mesh renderOrder={4}>
+          <planeGeometry args={[portraitWidth, portraitHeight]} />
+          <meshBasicMaterial map={textures[0]} alphaMap={portraitFadeTexture} toneMapped={false} fog={false} transparent depthTest={false} depthWrite={false} />
         </mesh>
       </group>
-      {archiveMedia.map(({ file }, index) => {
-        const texture = textures[index + 1]
-        const ratio = texture.image.width / texture.image.height
-        const height = narrow ? 1.13 : 2.65
-        const width = height * ratio
-        return (
-          <group
-            key={file}
-            ref={(group) => { photoGroups.current[index] = group }}
-            position={photoPositions[index]}
-            rotation={[0, (2 - index) * .068, (index % 2 ? 1 : -1) * .047]}
-            visible={false}
-          >
-            <mesh position={[0, 0, -.045]}>
-              <planeGeometry args={[width + .10, height + .10]} />
-              <meshBasicMaterial ref={(material) => { photoFrames.current[index] = material }} color="#ead0fb" transparent opacity={0} depthWrite={false} />
-            </mesh>
-            <mesh>
-              <planeGeometry args={[width, height]} />
-              <meshBasicMaterial ref={(material) => { photoMaterials.current[index] = material }} map={texture} transparent opacity={0} depthWrite={false} toneMapped={false} />
-            </mesh>
-          </group>
-        )
-      })}
-      <group position={[0, heartY, -56.9]} scale={heartScale}>
-        {heart.map((line, index) => <primitive key={index} object={line} />)}
-      </group>
+      <FlightParticles
+        pose={pose}
+        unicorn={textures[1].image}
+        heart={textures[2].image}
+        narrow={narrow}
+        heartScale={heartScale}
+        heartY={heartY}
+      />
     </>
   )
 }
@@ -257,7 +264,9 @@ export default function UnicornScene(props: SceneProps) {
       gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
       aria-hidden="true"
     >
-      <World {...props} />
+      <SceneErrorBoundary onError={props.onUnavailable}>
+        <World {...props} />
+      </SceneErrorBoundary>
     </Canvas>
   )
 }
