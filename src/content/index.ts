@@ -2,6 +2,8 @@ export const foundation = 'Fondazione Gli Unicorni di Diana'
 
 export const dianaPortrait = { src: '/media/ritratto-diana.webp', width: 916, height: 1020 } as const
 
+export const brandLogo = { src: '/media/marchio.webp', width: 653, height: 822 } as const
+
 export const illustrations = {
   unicornHead: '/media/unicorn-line.webp',
   flyingUnicorn: '/media/unicorn-full-line.webp',
@@ -31,6 +33,8 @@ export const chapters = [
   { id: 'inizio', label: 'Inizio' },
   { id: 'storia', label: 'Storia' },
   { id: 'obiettivi', label: 'Obiettivi' },
+  { id: 'progetti', label: 'Progetti' },
+  { id: 'nuovi-eventi', label: 'Nuovi Eventi' },
   { id: 'eventi', label: 'Eventi' },
   { id: 'gadget', label: 'Gadget' },
   { id: 'contatti', label: 'Contatti' },
@@ -40,6 +44,101 @@ export const donation = {
   blood: 'https://www.donailsangue.salute.gov.it/it/sangue-pagina/come-donare/',
   marrow: 'https://ibmdr.galliera.it/come-diventare-donatore/informazioni-per-i-donatori/iscrizione',
 }
+
+export interface FeaturedProject {
+  id: string
+  title: string
+  badge: string
+  place: string
+  summary: string
+  detail: string
+  imageSrc: string
+  ctaLabel: string
+  ctaUrl: string
+  sortOrder?: number
+  isVisible?: boolean
+}
+
+export const featuredProjects: readonly FeaturedProject[] = [
+  {
+    id: 'scuole',
+    title: 'Progetto Scuole — Donare è amare',
+    badge: 'Scuole e sensibilizzazione',
+    place: 'Istituti e Licei · Napoli e Campania',
+    summary: 'Incontriamo studentesse e studenti nelle scuole per raccontare la storia di Diana e avvicinare i giovani dai 18 anni alla cultura del dono di sangue e midollo osseo.',
+    detail: 'Durante gli incontri portiamo testimonianze dirette di donatori, volontari e medici, rispondendo alle domande dei ragazzi su come iscriversi al Registro Italiano Donatori di Midollo Osseo (IBMDR) e come iniziare a donare il sangue.',
+    imageSrc: '/media/archivio/donare-insieme.webp',
+    ctaLabel: 'Portaci nella tua scuola',
+    ctaUrl: schoolContact,
+  },
+  {
+    id: 'disneyland-paris',
+    title: 'Viaggio a Disneyland Paris',
+    badge: 'Dona un ricordo felice',
+    place: 'Ospedale Santobono Pausilipon · Parigi',
+    summary: 'Un progetto speciale per regalare ai bambini in cura nei reparti di oncologia pediatrica dell’Ospedale Santobono Pausilipon e alle loro famiglie un viaggio indimenticabile a Disneyland Paris.',
+    detail: 'Con il progetto «Dona un ricordo felice», le raccolte solidali e il sostegno della comunità si trasformano in giorni di meraviglia, spensieratezza e sorrisi per i piccoli pazienti e i loro genitori.',
+    imageSrc: '/media/archivio/pasqua-solidale.webp',
+    ctaLabel: 'Sostieni il viaggio con Rossella',
+    ctaUrl: whatsapp('Ciao Rossella, vorrei informazioni per sostenere il progetto Viaggio a Disneyland Paris.'),
+  },
+  {
+    id: 'cucina-delle-mamme',
+    title: 'La cucina delle mamme',
+    badge: 'Solidarietà in reparto',
+    place: 'Ospedale Pausilipon · Napoli',
+    summary: 'Una cucina attrezzata e accogliente donata all’Ospedale Pausilipon per le mamme e le famiglie dei bambini ricoverati.',
+    detail: 'Uno spazio pensato per far sentire a casa chi affronta lunghi periodi in ospedale accanto ai propri figli, realizzato grazie alla generosità di tutte le persone che sostengono Gli Unicorni di Diana.',
+    imageSrc: '/media/archivio/donazione-sangue.webp',
+    ctaLabel: 'Guarda il racconto su Facebook',
+    ctaUrl: 'https://www.facebook.com/GliUnicorniDiDIANA/posts/pfbid035hag3b5p1xhYSq4jVJ3TccZUY8Rn28PeWWj5fyRgAMMCxwmjuyViAAAr99TaeMj7l',
+  },
+]
+
+export interface UpcomingEvent {
+  id: string
+  title: string
+  category: string
+  place: string
+  dateLabel: string
+  dateIso?: string
+  summary: string
+  detail: string
+  imageSrc: string
+  ctaLabel: string
+  ctaUrl: string
+  sortOrder?: number
+  isVisible?: boolean
+}
+
+export const upcomingEvents: readonly UpcomingEvent[] = [
+  {
+    id: 'prossimo-incontro-scuole',
+    title: 'Nuovi incontri nelle scuole «Donare è amare»',
+    category: 'Scuole',
+    place: 'Napoli e provincia',
+    dateLabel: 'Prossimi appuntamenti 2026/2027',
+    dateIso: '2026-11-30',
+    summary: 'Continua il calendario di incontri con gli studenti delle scuole superiori per parlare insieme di donazione di sangue e midollo osseo.',
+    detail: 'Vuoi invitare Gli Unicorni di Diana nel tuo istituto o conoscere la data del prossimo incontro aperto al pubblico? Scrivi direttamente a Rossella su WhatsApp.',
+    imageSrc: '/media/archivio/donare-insieme.webp',
+    ctaLabel: 'Chiedi le date a Rossella',
+    ctaUrl: whatsapp('Ciao Rossella, vorrei conoscere le date dei prossimi eventi degli Unicorni di Diana.'),
+  },
+  {
+    id: 'campagna-natale-solidale',
+    title: 'Campagna Solidale per il Viaggio a Disneyland Paris',
+    category: 'Raccolta solidale',
+    place: 'Napoli · Ospedale Santobono Pausilipon',
+    dateLabel: 'Campagna attiva',
+    dateIso: '2026-12-15',
+    summary: 'Iniziative e incontri solidali a sostegno del progetto «Dona un ricordo felice — Un viaggio a Disneyland Paris» per i bambini dell’oncologia pediatrica.',
+    detail: 'Contatta Rossella per partecipare ai banchetti solidali o prenotare i prodotti delle campagne stagionali a sostegno dei progetti in reparto.',
+    imageSrc: '/media/archivio/natale-solidale.webp',
+    ctaLabel: 'Partecipa con Rossella',
+    ctaUrl: whatsapp('Ciao Rossella, vorrei partecipare alle nuove iniziative solidali degli Unicorni di Diana.'),
+  },
+]
 
 export const events = [
   {
@@ -79,14 +178,15 @@ export const events = [
 export const iban = {
   code: 'IT57H0200803446000106388833',
   beneficiary: 'GLI UNICORNI DI DIANA ODV',
-  proceedsNote: 'Il ricavato sarà interamente devoluto ai progetti dell’associazione.',
+  proceedsNote: 'Per richiedere i gadget solidali o gratuiti contatta direttamente Rossella.',
 } as const
 
 export interface SolidarityProduct {
   id: string
   label: string
   item: string
-  icon: 'shirt' | 'sweatshirt' | 'hat' | 'book'
+  kind: 'solidale' | 'gratuito'
+  icon: 'shirt' | 'sweatshirt' | 'hat' | 'book' | 'pin' | 'pen' | 'bracelet'
   category: string
   price: string
   badge?: string
@@ -102,62 +202,105 @@ export const solidarity: readonly SolidarityProduct[] = [
     id: 't-shirt',
     label: 'T-shirt',
     item: 'la T-shirt',
+    kind: 'solidale',
     icon: 'shirt',
-    category: 'Acquisto solidale',
+    category: 'Gadget solidale',
     price: '10 €',
     badge: 'Novità',
     glb: '/media/gadget/t-shirt.glb',
     src: '/media/gadget/t-shirt.webp',
     alt: 'T-shirt bianche ufficiali Gli Unicorni di Diana con logo sul petto e variante «grazie a me oggi un bimbo sorriderà»',
     description: 'T-shirt bianca in due grafiche ufficiali (ruota il modello 3D per vedere entrambi i lati): stampa «grazie a me oggi un bimbo sorriderà · FALLO ANCHE TU!» e logo classico degli Unicorni di Diana.',
-    availabilityNote: 'Chiedi a Rossella taglie disponibili, variante preferita e modalità di consegna su WhatsApp.',
+    availabilityNote: 'Contatta direttamente Rossella per taglie disponibili, variante preferita e modalità di consegna.',
   },
   {
     id: 'felpe',
     label: 'Felpa',
     item: 'la felpa',
+    kind: 'solidale',
     icon: 'sweatshirt',
-    category: 'Acquisto solidale',
+    category: 'Gadget solidale',
     price: '20 €',
     glb: '/media/gadget/felpa.glb',
     src: '/media/gadget/felpa.webp',
     alt: 'Felpa bianca girocollo ufficiale Associazione Gli Unicorni di Diana con il marchio sul petto',
     description: 'Felpa bianca girocollo con il simbolo ufficiale Associazione Gli Unicorni di Diana, pensata per accompagnare incontri, iniziative e giornate dedicate alla cultura del dono.',
-    availabilityNote: 'Chiedi a Rossella taglie disponibili e modalità di consegna su WhatsApp.',
+    availabilityNote: 'Contatta direttamente Rossella per taglie disponibili e modalità di consegna.',
   },
   {
     id: 'cappello',
     label: 'Cappello',
     item: 'il cappello',
+    kind: 'solidale',
     icon: 'hat',
-    category: 'Acquisto solidale',
+    category: 'Gadget solidale',
     price: '5 €',
     glb: '/media/gadget/cappello.glb',
     src: '/media/gadget/cappello.webp',
     alt: 'Cappello bianco ufficiale Associazione Gli Unicorni di Diana con il marchio sul davanti',
     description: 'Cappello bianco con il logo ufficiale dell’Associazione Gli Unicorni di Diana: un gesto semplice per portare con te il ricordo di Diana e sostenere i progetti solidali.',
-    availabilityNote: 'Chiedi a Rossella disponibilità e modalità di ritiro o spedizione su WhatsApp.',
+    availabilityNote: 'Contatta direttamente Rossella per disponibilità e modalità di ritiro.',
   },
   {
     id: 'libro',
     label: 'Libro',
     item: 'il libro «Sulle mie spalle, dentro il mio cuore»',
+    kind: 'solidale',
     icon: 'book',
-    category: 'Acquisto solidale',
+    category: 'Gadget solidale',
     price: '20 €',
     glb: '/media/gadget/libro.glb',
     src: '/media/gadget/libro.webp',
     alt: 'Copertina del libro «Sulle mie spalle, dentro il mio cuore — Rinascere lungo il Cammino per Santiago» di Michele Bisceglia',
-    description: '«Sulle mie spalle, dentro il mio cuore — Rinascere lungo il Cammino per Santiago» di Michele Bisceglia (Franco Di Mauro Editore): l’acquisto sostiene direttamente i progetti dell’associazione.',
-    availabilityNote: 'Chiedi a Rossella disponibilità delle copie e come riceverlo su WhatsApp.',
+    description: '«Sulle mie spalle, dentro il mio cuore — Rinascere lungo il Cammino per Santiago» di Michele Bisceglia (Franco Di Mauro Editore): il ricavato sostiene direttamente i progetti dell’associazione.',
+    availabilityNote: 'Contatta direttamente Rossella per disponibilità delle copie e come riceverlo.',
+  },
+  {
+    id: 'spilla',
+    label: 'Spilla',
+    item: 'la spilla ufficiale',
+    kind: 'gratuito',
+    icon: 'pin',
+    category: 'Gadget gratuito',
+    price: 'Gratuito',
+    badge: 'Omaggio gratuito',
+    glb: '/media/gadget/spilla.glb',
+    src: '/media/gadget/spilla.webp',
+    alt: 'Spilla rotonda ufficiale con il logo Gli Unicorni di Diana',
+    description: 'La spilletta ufficiale degli Unicorni di Diana: un piccolo simbolo gratuito da appuntare su zaino o giacca per diffondere ogni giorno il messaggio della donazione.',
+    availabilityNote: 'Gadget gratuito: contatta direttamente Rossella per riceverla durante gli incontri o concordare il ritiro.',
+  },
+  {
+    id: 'penna',
+    label: 'Penna',
+    item: 'la penna ufficiale',
+    kind: 'gratuito',
+    icon: 'pen',
+    category: 'Gadget gratuito',
+    price: 'Gratuito',
+    badge: 'Omaggio gratuito',
+    glb: '/media/gadget/penna.glb',
+    src: '/media/gadget/penna.webp',
+    alt: 'Penna ufficiale Gli Unicorni di Diana bianca e viola con marchio sul fusto',
+    description: 'La penna degli Unicorni di Diana distribuita gratuitamente agli studenti e ai partecipanti durante gli incontri nelle scuole e le giornate informative.',
+    availabilityNote: 'Gadget gratuito: contatta direttamente Rossella per richiederla.',
+  },
+  {
+    id: 'bracciale',
+    label: 'Bracciale',
+    item: 'il bracciale ufficiale',
+    kind: 'gratuito',
+    icon: 'bracelet',
+    category: 'Gadget gratuito',
+    price: 'Gratuito',
+    badge: 'Omaggio gratuito',
+    glb: '/media/gadget/bracciale.glb',
+    src: '/media/gadget/bracciale.webp',
+    alt: 'Bracciale ufficiale Gli Unicorni di Diana nei colori pastello arcobaleno e viola (modello 3D segnaposto)',
+    description: 'Il braccialetto gratuito degli Unicorni di Diana da portare sempre al polso come segno di vicinanza e memoria. (Modello 3D segnaposto).',
+    availabilityNote: 'Gadget gratuito: contatta direttamente Rossella per richiederlo.',
   },
 ]
-
-export const credits = {
-  author: 'Soufiane Oujihi',
-  model: 'https://sketchfab.com/3d-models/unicorn-3d-c89d06fe31694234bee10e42c2919299',
-  license: 'https://creativecommons.org/licenses/by/4.0/',
-}
 
 export const archiveMedia = [
   { file: 'donare-insieme', label: 'Donare è amare', caption: 'Una foto di gruppo durante un’iniziativa di sensibilizzazione.' },
@@ -171,7 +314,24 @@ function archivePath(file: string, thumb = false) {
   return `/media/archivio/${file}${thumb ? '-thumb' : ''}.webp`
 }
 
-const baseSphereEvents = [
+export interface ArchiveEventItem {
+  id: string
+  title: string
+  category?: string
+  place?: string
+  date?: string
+  dateTime?: string
+  summary?: string
+  description?: string
+  sourceLabel?: string
+  url?: string
+  src: string
+  fullSrc: string
+  alt: string
+  isPlaceholder?: boolean
+}
+
+export const baseSphereEvents: ArchiveEventItem[] = [
   {
     id: events[0].id,
     title: events[0].title,
@@ -226,10 +386,15 @@ const baseSphereEvents = [
   })),
 ]
 
-export const sphereEvents = Array.from({ length: 28 }, (_, index) => {
-  const item = baseSphereEvents[index % baseSphereEvents.length]
-  return {
-    ...item,
-    id: `${item.id}-${index + 1}`,
-  }
-})
+export function expandToSphereItems(items: readonly ArchiveEventItem[], targetCount = 28) {
+  const source = items.length ? items : baseSphereEvents
+  return Array.from({ length: targetCount }, (_, index) => {
+    const item = source[index % source.length]
+    return {
+      ...item,
+      id: `${item.id}-${index + 1}`,
+    }
+  })
+}
+
+export const sphereEvents = expandToSphereItems(baseSphereEvents)

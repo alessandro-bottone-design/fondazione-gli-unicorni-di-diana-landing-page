@@ -1,16 +1,22 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { CSSProperties, MouseEvent, ReactNode } from 'react'
 import {
-  ArrowDownRight, ArrowUpRight, Bone,
+  ArrowDownRight, ArrowUpRight, Bone, Calendar,
   Droplet, Facebook, FileText, GraduationCap,
-  Instagram, MessageCircle, Phone,
+  Instagram, Lock, MapPin, MessageCircle, Phone,
 } from 'lucide-react'
 import { domAnimation, LazyMotion, MotionConfig, useReducedMotion } from 'motion/react'
-import { chapters, contacts, credits, dianaPortrait, donation, foundation, schoolContact, solidarity, sphereEvents, whatsapp } from './content'
+import {
+  brandLogo, chapters, contacts, dianaPortrait, donation,
+  foundation, schoolContact, solidarity, whatsapp,
+} from './content'
+import type { ArchiveEventItem, FeaturedProject, SolidarityProduct, UpcomingEvent } from './content'
+import { useCmsContent } from './content/useCmsContent'
 import { FlightStage } from './worldflight/FlightStage'
 import { flightLength, flightStops } from './worldflight'
 import type { FlightPose, StopId } from './worldflight'
 import SphereImageGrid from './components/ui/img-sphere'
+import ExpandableGallery from './components/ui/gallery-animation'
 import GadgetGallery from './components/GadgetGallery'
 import { IbanBox } from './components/IbanBox'
 import { useScrollStory } from './worldflight/useScrollStory'
@@ -25,7 +31,11 @@ const rainbowVars = {
 const rainbowStyle = rainbowVars as CSSProperties
 
 function ExternalLink({ href, children, className }: { href: string; children: ReactNode; className?: string }) {
-  return <a className={className} href={href} target="_blank" rel="noopener noreferrer">{children}</a>
+  return (
+    <a className={className} href={href} target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  )
 }
 
 function SiteHeader({ activeChapter }: { activeChapter: StopId }) {
@@ -59,17 +69,21 @@ function Hero({ fallback }: { fallback: boolean }) {
   return (
     <section className="hero" aria-labelledby="hero-title" tabIndex={-1}>
       <div className="shell hero-inner">
-        <h1 id="hero-title" aria-label={foundation}>Gli Unicorni <em>di Diana.</em></h1>
+        <h1 id="hero-title" aria-label={foundation}>
+          Gli Unicorni <em>di Diana.</em>
+        </h1>
         <div className="hero-stage" aria-hidden="true">
           {fallback && (
-            <img className="fallback-poster" src="/media/unicorno-poster.webp" width={1024} height={1024} alt="" />
+            <img
+              className="fallback-poster"
+              src={brandLogo.src}
+              width={brandLogo.width}
+              height={brandLogo.height}
+              alt=""
+            />
           )}
         </div>
         <p className="hero-cue">Scorri per scoprire di più</p>
-        <p className="hero-credit">
-          Scultura «Unicorn 3D» di <ExternalLink href={credits.model}>{credits.author}</ExternalLink>, adattata per questa pagina ·{' '}
-          <ExternalLink href={credits.license}>licenza CC BY 4.0</ExternalLink>
-        </p>
       </div>
     </section>
   )
@@ -81,11 +95,16 @@ function Story({ fallback }: { fallback: boolean }) {
       <div className="shell chapter-shell">
         <div className="story-layout">
           <div className="story-copy">
-            <h2 id="story-title">Da Diana,<br /> <em>il primo passo.</em></h2>
+            <h2 id="story-title">
+              Da Diana,
+              <br /> <em>il primo passo.</em>
+            </h2>
             <p>Diana aveva sei anni. Il suo sorriso è il punto da cui parte questa storia.</p>
             <p>Nel suo ricordo sono nati Gli Unicorni di Diana, per far conoscere la donazione di sangue e midollo osseo.</p>
             <p>Oggi incontriamo studentesse e studenti, ascoltiamo le loro domande e raccontiamo da dove cominciare.</p>
-            <a className="text-link story-next" href="#obiettivi">Scopri come donare <ArrowDownRight size={17} /></a>
+            <a className="text-link story-next" href="#obiettivi">
+              Scopri come donare <ArrowDownRight size={17} />
+            </a>
           </div>
           {fallback && (
             <figure className="story-portrait">
@@ -109,29 +128,146 @@ function Objectives() {
     <section className="chapter objectives" aria-labelledby="objectives-title" tabIndex={-1}>
       <div className="shell chapter-shell">
         <div className="objective-heading">
-          <h2 id="objectives-title">Come si comincia<br /> <em>a donare?</em></h2>
-          <p>Se hai almeno 18 anni e vuoi fare il primo passo, scegli da dove iniziare. Ogni percorso ha requisiti e passaggi propri.</p>
+          <h2 id="objectives-title">
+            Come si comincia
+            <br /> <em>a donare?</em>
+          </h2>
+          <p>
+            Se hai almeno 18 anni e vuoi fare il primo passo, scegli da dove iniziare. Ogni percorso ha requisiti e
+            passaggi propri.
+          </p>
         </div>
         <div className="pathways">
           <article className="pathway">
-            <span className="pathway-icon"><Droplet size={28} strokeWidth={1.5} /></span>
+            <span className="pathway-icon">
+              <Droplet size={28} strokeWidth={1.5} />
+            </span>
             <h3>Donare sangue</h3>
-            <p>Dai 18 anni, in buona salute, dopo un colloquio medico: scopri come funziona la donazione e trova un centro trasfusionale.</p>
-            <ExternalLink className="text-link" href={donation.blood}>Come donare il sangue <ArrowUpRight size={18} /></ExternalLink>
+            <p>
+              Dai 18 anni, in buona salute, dopo un colloquio medico: scopri come funziona la donazione e trova un
+              centro trasfusionale.
+            </p>
+            <ExternalLink className="text-link" href={donation.blood}>
+              Come donare il sangue <ArrowUpRight size={18} />
+            </ExternalLink>
           </article>
           <article className="pathway">
-            <span className="pathway-icon"><Bone size={28} strokeWidth={1.5} /></span>
+            <span className="pathway-icon">
+              <Bone size={28} strokeWidth={1.5} />
+            </span>
             <h3>Donare midollo osseo</h3>
-            <p>Iscrizione tra i 18 e i 35 anni nel Registro italiano dei donatori: per iniziare basta un prelievo di sangue o un tampone salivare.</p>
-            <ExternalLink className="text-link" href={donation.marrow}>Vai al registro donatori <ArrowUpRight size={18} /></ExternalLink>
-            <ExternalLink className="text-link resource-link" href="/media/archivio/guida-midollo.pdf"><FileText size={16} /> Pieghevole della campagna (PDF, 2,3 MB) <ArrowUpRight size={16} /></ExternalLink>
+            <p>
+              Iscrizione tra i 18 e i 35 anni nel Registro italiano dei donatori: per iniziare basta un prelievo di
+              sangue o un tampone salivare.
+            </p>
+            <ExternalLink className="text-link" href={donation.marrow}>
+              Vai al registro donatori <ArrowUpRight size={18} />
+            </ExternalLink>
+            <ExternalLink className="text-link resource-link" href="/media/archivio/guida-midollo.pdf">
+              <FileText size={16} /> Pieghevole della campagna (PDF, 2,3 MB) <ArrowUpRight size={16} />
+            </ExternalLink>
           </article>
         </div>
         <div className="school-note">
           <GraduationCap size={28} strokeWidth={1.5} />
           <p>Vuoi parlare di donazione nella tua scuola?</p>
-          <ExternalLink className="text-link" href={schoolContact}>Portaci nella tua scuola <ArrowUpRight size={18} /></ExternalLink>
+          <ExternalLink className="text-link" href={schoolContact}>
+            Portaci nella tua scuola <ArrowUpRight size={18} />
+          </ExternalLink>
         </div>
+      </div>
+    </section>
+  )
+}
+
+function Projects({ projects }: { projects: readonly FeaturedProject[] }) {
+  return (
+    <section className="chapter projects" aria-labelledby="projects-title" tabIndex={-1}>
+      <div className="shell chapter-shell">
+        <div className="projects-header">
+          <div>
+            <h2 id="projects-title">
+              I progetti <em>in evidenza.</em>
+            </h2>
+            <p>
+              Dalle scuole ai reparti dell’Ospedale Santobono Pausilipon: passa sopra o tocca una card per espandere ogni
+              progetto.
+            </p>
+          </div>
+        </div>
+        <ExpandableGallery projects={projects} className="projects-gallery" />
+      </div>
+    </section>
+  )
+}
+
+function UpcomingEventsSection({ events }: { events: readonly UpcomingEvent[] }) {
+  return (
+    <section className="chapter upcoming" aria-labelledby="upcoming-title" tabIndex={-1}>
+      <div className="shell chapter-shell">
+        <div className="upcoming-header">
+          <h2 id="upcoming-title">
+            Nuovi <em>eventi.</em>
+          </h2>
+          <p>I prossimi incontri nelle scuole, le campagne solidali e gli appuntamenti in programma.</p>
+        </div>
+
+        {events.length > 0 ? (
+          <div className="upcoming-grid">
+            {events.map((item) => (
+              <article key={item.id} className="upcoming-card">
+                <div className="upcoming-card-media">
+                  <img src={item.imageSrc} alt={item.title} loading="lazy" />
+                  <span className="upcoming-card-category">{item.category}</span>
+                </div>
+                <div className="upcoming-card-body">
+                  <div className="upcoming-card-meta">
+                    {item.dateLabel && (
+                      <span className="upcoming-meta-pill">
+                        <Calendar size={14} strokeWidth={1.8} />
+                        <time dateTime={item.dateIso}>{item.dateLabel}</time>
+                      </span>
+                    )}
+                    {item.place && (
+                      <span className="upcoming-meta-pill">
+                        <MapPin size={14} strokeWidth={1.8} />
+                        <span>{item.place}</span>
+                      </span>
+                    )}
+                  </div>
+                  <h3>{item.title}</h3>
+                  <p className="upcoming-card-summary">{item.summary}</p>
+                  {item.detail && <p className="upcoming-card-detail">{item.detail}</p>}
+                  <div className="upcoming-card-footer">
+                    <ExternalLink
+                      className="button button-ink upcoming-card-cta"
+                      href={
+                        item.ctaUrl ||
+                        whatsapp(`Ciao Rossella, vorrei informazioni sull'evento «${item.title}».`)
+                      }
+                    >
+                      <MessageCircle size={17} />
+                      <span>{item.ctaLabel || 'Chiedi informazioni a Rossella'}</span>
+                      <ArrowUpRight size={16} />
+                    </ExternalLink>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="upcoming-empty">
+            <p>Nuovi appuntamenti in preparazione. Scrivi a Rossella o seguici sui social per le prossime date.</p>
+            <ExternalLink
+              className="button button-ink"
+              href={whatsapp('Ciao Rossella, vorrei conoscere i prossimi eventi in programma degli Unicorni di Diana.')}
+            >
+              <MessageCircle size={18} />
+              <span>Chiedi a Rossella</span>
+              <ArrowUpRight size={16} />
+            </ExternalLink>
+          </div>
+        )}
       </div>
     </section>
   )
@@ -147,11 +283,13 @@ function computeSphereSize() {
   return Math.round(Math.min(680, window.innerWidth * 0.52, window.innerHeight * 0.76))
 }
 
-function Archive({ active }: { active: boolean }) {
+function Archive({ active, sphereItems }: { active: boolean; sphereItems: ArchiveEventItem[] }) {
   const [sphereSize, setSphereSize] = useState(computeSphereSize)
 
   useEffect(() => {
-    function update() { setSphereSize(computeSphereSize()) }
+    function update() {
+      setSphereSize(computeSphereSize())
+    }
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
   }, [])
@@ -161,12 +299,15 @@ function Archive({ active }: { active: boolean }) {
       <div className="shell chapter-shell">
         <div className="archive-stage">
           <div className="archive-heading">
-            <h2 id="archive-title">Dove ci siamo<br /> <em>incontrati.</em></h2>
+            <h2 id="archive-title">
+              Dove ci siamo
+              <br /> <em>incontrati.</em>
+            </h2>
             <p>Dalle aule alle iniziative solidali. Trascina la sfera e clicca una bolla per scoprire ogni evento.</p>
           </div>
           <div className="archive-sphere">
             <SphereImageGrid
-              images={sphereEvents}
+              images={sphereItems}
               containerSize={sphereSize}
               sphereRadius={Math.round(sphereSize * 0.4)}
               dragSensitivity={0.65}
@@ -184,11 +325,19 @@ function Archive({ active }: { active: boolean }) {
   )
 }
 
-function Gadgets({ selectedId, onSelect }: { selectedId: string; onSelect: (id: string) => void }) {
+function Gadgets({
+  gadgets,
+  selectedId,
+  onSelect,
+}: {
+  gadgets: readonly SolidarityProduct[]
+  selectedId: string
+  onSelect: (id: string) => void
+}) {
   return (
     <section className="chapter gadgets" aria-labelledby="gadgets-title" tabIndex={-1}>
       <div className="shell chapter-shell">
-        <GadgetGallery selectedId={selectedId} onSelect={onSelect} />
+        <GadgetGallery gadgets={gadgets} selectedId={selectedId} onSelect={onSelect} />
       </div>
     </section>
   )
@@ -200,15 +349,34 @@ function Contacts() {
       <div className="shell chapter-shell">
         <div className="contact-layout">
           <div className="contact-copy">
-            <h2 id="contact-title">Un gesto può far <em>volare una vita.</em></h2>
+            <h2 id="contact-title">
+              Un gesto può far <em>volare una vita.</em>
+            </h2>
             <p className="contact-intro">Segui le iniziative o scrivi a Rossella per sapere da dove partire.</p>
             <div className="contact-actions">
-              <ExternalLink className="button button-ink" href={whatsapp('Ciao Rossella, vorrei informazioni sulle attività degli Unicorni di Diana.')}><MessageCircle size={20} /> Scrivi a Rossella <ArrowUpRight size={16} /></ExternalLink>
-              <a className="button button-outline" href={`tel:${contacts.telephone}`}><Phone size={20} /> {contacts.phone}</a>
-              <ExternalLink className="button button-outline" href={contacts.instagram}><Instagram size={20} /> Instagram <ArrowUpRight size={16} /></ExternalLink>
-              <ExternalLink className="button button-outline" href={contacts.facebook}><Facebook size={20} /> Facebook <ArrowUpRight size={16} /></ExternalLink>
+              <ExternalLink
+                className="button button-ink"
+                href={whatsapp('Ciao Rossella, vorrei informazioni sulle attività degli Unicorni di Diana.')}
+              >
+                <MessageCircle size={20} /> Scrivi a Rossella <ArrowUpRight size={16} />
+              </ExternalLink>
+              <a className="button button-outline" href={`tel:${contacts.telephone}`}>
+                <Phone size={20} /> {contacts.phone}
+              </a>
+              <ExternalLink className="button button-outline" href={contacts.instagram}>
+                <Instagram size={20} /> Instagram <ArrowUpRight size={16} />
+              </ExternalLink>
+              <ExternalLink className="button button-outline" href={contacts.facebook}>
+                <Facebook size={20} /> Facebook <ArrowUpRight size={16} />
+              </ExternalLink>
             </div>
             <IbanBox compact />
+            <div className="admin-footer-link">
+              <a href="/admin">
+                <Lock size={13} />
+                <span>Area gestione sito (Rossella)</span>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -225,30 +393,35 @@ export default function App() {
   const pose = useRef<FlightPose>({ progress: 0 })
   const [active, setActive] = useState(() => Math.max(0, indexForHash(location.hash)))
   const [webglUnavailable, setWebglUnavailable] = useState(false)
+  const { projects, upcomingEvents, gadgets, sphereItems } = useCmsContent()
   const [selectedGadgetId, setSelectedGadgetId] = useState<string>(solidarity[0].id)
   const reducedMotion = useReducedMotion() ?? false
   const flight = !webglUnavailable
 
-  // Any loading or WebGL failure falls back cleanly instead of leaving an empty stage.
-  const onUnavailable = useCallback(() => { setWebglUnavailable(true) }, [])
+  const onUnavailable = useCallback(() => {
+    setWebglUnavailable(true)
+  }, [])
   const controller = useScrollStory(track, flight, pose.current, setActive, onUnavailable)
 
   const onReady = useCallback(() => {
     controller.current?.update()
   }, [controller])
 
-  const goTo = useCallback((index: number, focus = false) => {
-    const stop = document.getElementById(flightStops[index].id)
-    if (!stop) return
-    stop.scrollIntoView({ behavior: 'instant', block: 'start' })
-    controller.current?.update()
-    setActive(index)
-    if (focus) {
-      requestAnimationFrame(() => {
-        stop.querySelector<HTMLElement>('.flight-panel > section')?.focus({ preventScroll: true })
-      })
-    }
-  }, [controller])
+  const goTo = useCallback(
+    (index: number, focus = false) => {
+      const stop = document.getElementById(flightStops[index].id)
+      if (!stop) return
+      stop.scrollIntoView({ behavior: 'instant', block: 'start' })
+      controller.current?.update()
+      setActive(index)
+      if (focus) {
+        requestAnimationFrame(() => {
+          stop.querySelector<HTMLElement>('.flight-panel > section')?.focus({ preventScroll: true })
+        })
+      }
+    },
+    [controller],
+  )
 
   useLayoutEffect(() => {
     const rootStyle = document.documentElement.style
@@ -279,7 +452,16 @@ export default function App() {
 
   function navigate(event: MouseEvent<HTMLDivElement>) {
     if (!flight) return
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return
+    }
     const href = (event.target as Element).closest('a')?.getAttribute('href')
     if (!href) return
     const index = indexForHash(href)
@@ -295,8 +477,10 @@ export default function App() {
     <Hero fallback={webglUnavailable} />,
     <Story fallback={webglUnavailable} />,
     <Objectives />,
-    <Archive active={!flight || active === archiveStop} />,
-    <Gadgets selectedId={selectedGadgetId} onSelect={setSelectedGadgetId} />,
+    <Projects projects={projects} />,
+    <UpcomingEventsSection events={upcomingEvents} />,
+    <Archive active={!flight || active === archiveStop} sphereItems={sphereItems} />,
+    <Gadgets gadgets={gadgets} selectedId={selectedGadgetId} onSelect={setSelectedGadgetId} />,
     <Contacts />,
   ]
 
@@ -310,11 +494,14 @@ export default function App() {
           style={rainbowStyle}
         >
           <div className="page-atmosphere" aria-hidden="true" />
-          <a className="skip-link" href="#inizio">Vai al contenuto</a>
+          <a className="skip-link" href="#inizio">
+            Vai al contenuto
+          </a>
           <SiteHeader activeChapter={activeChapter} />
           {flight && (
             <FlightStage
               pose={pose.current}
+              gadgets={gadgets}
               isGadgetActive={activeChapter === 'gadget'}
               selectedGadgetId={selectedGadgetId}
               onSelectGadget={setSelectedGadgetId}
@@ -326,12 +513,16 @@ export default function App() {
           <main ref={track} className="flight-track" style={{ '--flight-length': flightLength } as CSSProperties}>
             {webglUnavailable && (
               <p className="shell fallback-notice" role="status">
-                La scena 3D non è disponibile su questo dispositivo: puoi comunque consultare tutti i contenuti della Fondazione.
+                La scena 3D non è disponibile su questo dispositivo: puoi comunque consultare tutti i contenuti della
+                Fondazione.
               </p>
             )}
             {flightStops.map(({ id, arrival }, index) => (
               <div className="flight-stop" id={id} key={id} style={{ '--flight-arrival': arrival } as CSSProperties}>
-                <div className={`flight-panel${flight && active === index ? ' is-active' : ''}`} inert={flight && active !== index}>
+                <div
+                  className={`flight-panel${flight && active === index ? ' is-active' : ''}`}
+                  inert={flight && active !== index}
+                >
                   {panels[index]}
                 </div>
               </div>

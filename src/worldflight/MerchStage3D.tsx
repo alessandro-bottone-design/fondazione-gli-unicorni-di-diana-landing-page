@@ -3,27 +3,35 @@ import { useEffect, useMemo, useRef } from 'react'
 import { Group, MathUtils } from 'three'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { solidarity } from '../content'
+import type { SolidarityProduct } from '../content'
 import { flightLength } from './index'
 import type { FlightPose } from './index'
 import { dracoLoader } from './draco'
 
-const merchUrls = solidarity.map((item) => item.glb)
+const defaultMerchUrls = solidarity.map((item) => item.glb)
 
-// Halo slots for the 3 non-selected models around the foreground item.
+// Halo slots for the non-selected models around the foreground item (supports up to 6 items).
 const DESKTOP_HALO: [number, number, number][] = [
   [-2.15, 0.72, -44.6],
   [0, 1.38, -46.2],
   [2.15, 0.72, -44.6],
+  [-1.45, 1.25, -45.4],
+  [1.45, 1.25, -45.4],
+  [0, -0.35, -45.8],
 ]
 
 const MOBILE_HALO: [number, number, number][] = [
   [-1.08, 1.32, -44.5],
   [0, 1.84, -45.6],
   [1.08, 1.32, -44.5],
+  [-0.72, 1.62, -45.1],
+  [0.72, 1.62, -45.1],
+  [0, 1.05, -45.3],
 ]
 
 export interface MerchStage3DProps {
   pose: FlightPose
+  gadgets: readonly SolidarityProduct[]
   narrow: boolean
   isGadgetActive: boolean
   selectedGadgetId: string
@@ -33,20 +41,20 @@ export interface MerchStage3DProps {
 
 export function MerchStage3D({
   pose,
+  gadgets,
   narrow,
   isGadgetActive,
   selectedGadgetId,
   onSelectGadget,
   reducedMotion,
 }: MerchStage3DProps) {
-  const gltfs = useLoader(GLTFLoader, merchUrls, (loader) => loader.setDRACOLoader(dracoLoader))
+  const gltfs = useLoader(GLTFLoader, defaultMerchUrls, (loader) => loader.setDRACOLoader(dracoLoader))
   const { gl, invalidate } = useThree()
 
   const stageGroup = useRef<Group>(null!)
   const itemRefs = useRef<(Group | null)[]>([])
   const hoveredIndex = useRef<number | null>(null)
 
-  // Interactive rotation state for the foreground item
   const dragState = useRef({
     active: false,
     moved: 0,
@@ -57,20 +65,38 @@ export function MerchStage3D({
     yawVel: 0,
   })
 
-  // Per-item smoothed transform state
-  const currentTransforms = useMemo(
-    () => solidarity.map(() => ({ x: 0, y: 0.6, z: -45, scale: 1 })),
-    [],
+  const scenesByUrl = useMemo(() => {
+    const map = new Map<string, Group>()
+    defaultMerchUrls.forEach((url, index) => {
+      if (gltfs[index]?.scene) {
+        map.set(url, gltfs[index].scene)
+      }
+    })
+    return map
+  }, [gltfs])
+
+  const items = gadgets.length > 0 ? gadgets : solidarity
+
+  const clonedScenes = useMemo(
+    () =>
+      items.map((item) => {
+        const template = scenesByUrl.get(item.glb) ?? gltfs[0]?.scene
+        return template ? template.clone(true) : new Group()
+      }),
+    [items, scenesByUrl, gltfs],
   )
 
-  const scenes = useMemo(() => gltfs.map((gltf) => gltf.scene.clone(true)), [gltfs])
+  const currentTransforms = useMemo(
+    () => items.map(() => ({ x: 0, y: 0.6, z: -45, scale: 1 })),
+    [items],
+  )
 
   const selectedIndex = Math.max(
     0,
-    solidarity.findIndex((item) => item.id === selectedGadgetId),
+    items.findIndex((item) => item.id === selectedGadgetId),
   )
+  const activeKind = items[selectedIndex]?.kind ?? 'solidale'
 
-  // Wake frameloop whenever gadget chapter becomes active or selection changes
   useEffect(() => {
     dragState.current.yaw = 0
     dragState.current.pitch = 0.06
@@ -78,7 +104,6 @@ export function MerchStage3D({
     invalidate()
   }, [selectedGadgetId, isGadgetActive, invalidate])
 
-  // Pointer drag rotation directly on the canvas while on the #gadget chapter
   useEffect(() => {
     const dom = gl.domElement
     if (!isGadgetActive) {
@@ -134,13 +159,12 @@ export function MerchStage3D({
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05)
     const distance = pose.progress * flightLength
-    const visible = distance > 3.75 && distance < 5.55
+    const visible = distance > 4.95 && distance < 6.75
     stageGroup.current.visible = visible
     if (!visible) return
 
-    // Entrance/exit fade-like scale multiplier near chapter boundaries
-    const enter = MathUtils.smoothstep(distance, 3.85, 4.45)
-    const exit = 1 - MathUtils.smoothstep(distance, 5.05, 5.45)
+    const enter = MathUtils.smoothstep(distance, 5.05, 5.62)
+    const exit = 1 - MathUtils.smoothstep(distance, 6.25, 6.65)
     const presence = enter * exit
 
     const haloSlots = narrow ? MOBILE_HALO : DESKTOP_HALO
@@ -163,16 +187,26 @@ export function MerchStage3D({
 
     const lerpAlpha = 1 - Math.exp(-8.5 * dt)
 
-    solidarity.forEach((_, index) => {
+    items.forEach((product, index) => {
       const group = itemRefs.current[index]
       if (!group) return
 
+      const inActiveGroup = product.kind === activeKind
+      if (!inActiveGroup) {
+        group.visible = false
+        return
+      }
+      group.visible = true
+
       const isSelected = index === selectedIndex
       const isHovered = hoveredIndex.current === index
-      const targetPos = isSelected ? heroPos : haloSlots[haloCursor++]
+      const slotPos = haloSlots[haloCursor % haloSlots.length]
+      if (!isSelected) haloCursor++
+
+      const targetPos = isSelected ? heroPos : slotPos
       const targetScale = isSelected ? heroScale : haloBaseScale * (isHovered ? 1.1 : 1)
 
-      const cur = currentTransforms[index]
+      const cur = currentTransforms[index] ?? { x: targetPos[0], y: targetPos[1], z: targetPos[2], scale: targetScale }
       cur.x = MathUtils.lerp(cur.x, targetPos[0], lerpAlpha)
       cur.y = MathUtils.lerp(cur.y, targetPos[1], lerpAlpha)
       cur.z = MathUtils.lerp(cur.z, targetPos[2], lerpAlpha)
@@ -212,7 +246,7 @@ export function MerchStage3D({
     <group ref={stageGroup}>
       <pointLight position={[0, 2.2, -39.5]} intensity={14} distance={20} decay={2} color="#fffaff" />
       <pointLight position={[-3.2, 0.2, -41.5]} intensity={6} distance={18} decay={2} color="#efe4ff" />
-      {solidarity.map((product, index) => (
+      {items.map((product, index) => (
         <group
           key={product.id}
           ref={(el) => {
@@ -241,7 +275,7 @@ export function MerchStage3D({
             onSelectGadget(product.id)
           }}
         >
-          <primitive object={scenes[index]} />
+          <primitive object={clonedScenes[index]} />
         </group>
       ))}
     </group>

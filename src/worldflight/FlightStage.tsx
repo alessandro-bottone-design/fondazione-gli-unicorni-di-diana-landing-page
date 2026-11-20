@@ -1,5 +1,6 @@
 import { Component, Suspense, lazy } from 'react'
 import type { ReactNode } from 'react'
+import type { SolidarityProduct } from '@/content'
 import type { FlightPose } from './index'
 
 const Scene = lazy(() => import('./UnicornScene'))
@@ -24,9 +25,9 @@ function FlightPoster() {
   return (
     <div className="flight-poster" aria-hidden="true">
       <img
-        src="/media/unicorno-poster.webp"
-        width={1024}
-        height={1024}
+        src="/media/marchio.webp"
+        width={653}
+        height={822}
         alt=""
         decoding="async"
       />
@@ -36,6 +37,7 @@ function FlightPoster() {
 
 export function FlightStage({
   pose,
+  gadgets,
   isGadgetActive,
   selectedGadgetId,
   onSelectGadget,
@@ -44,6 +46,7 @@ export function FlightStage({
   onUnavailable,
 }: {
   pose: FlightPose
+  gadgets: readonly SolidarityProduct[]
   isGadgetActive: boolean
   selectedGadgetId: string
   onSelectGadget: (id: string) => void
@@ -57,6 +60,7 @@ export function FlightStage({
         <Suspense fallback={<FlightPoster />}>
           <Scene
             pose={pose}
+            gadgets={gadgets}
             isGadgetActive={isGadgetActive}
             selectedGadgetId={selectedGadgetId}
             onSelectGadget={onSelectGadget}

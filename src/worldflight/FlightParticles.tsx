@@ -1,7 +1,7 @@
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import {
-  BufferAttribute, CanvasTexture, Color, DynamicDrawUsage, MathUtils, Points, PointsMaterial,
+  BufferAttribute, CanvasTexture, Color, DynamicDrawUsage, Group, MathUtils, Points, PointsMaterial,
 } from 'three'
 import { flightLength } from './index'
 import type { FlightPose } from './index'
@@ -40,7 +40,7 @@ function sampleInk(image: HTMLImageElement, count: number) {
   const centerY = (minY + maxY) / 2
   const points = new Float32Array(count * 3)
   for (let index = 0; index < count; index++) {
-    const pixel = ink[Math.floor((index + .5) * ink.length / count)]
+    const pixel = ink[Math.floor((index + 0.5) * ink.length / count)]
     points[index * 3] = (pixel % canvas.width - centerX) / span
     points[index * 3 + 1] = (centerY - Math.floor(pixel / canvas.width)) / span
   }
@@ -67,13 +67,13 @@ function makeCloud(count: number) {
     const angle = random(index + 537) * Math.PI * 2
     const radius = Math.sqrt(random(index + 2449))
     cloud[index] = Math.cos(angle) * radius
-    cloud[index + 1] = Math.sin(angle) * radius * .76
-    cloud[index + 2] = (random(index + 6179) - .5) * .3
+    cloud[index + 1] = Math.sin(angle) * radius * 0.76
+    cloud[index + 2] = (random(index + 6179) - 0.5) * 0.3
   }
   return cloud
 }
 
-function sampleShapeColors(shape: Float32Array, diagonal: boolean) {
+function sampleShapeColors(shape: Float32Array) {
   let minX = Infinity
   let maxX = -Infinity
   let minY = Infinity
@@ -85,99 +85,169 @@ function sampleShapeColors(shape: Float32Array, diagonal: boolean) {
     maxY = Math.max(maxY, shape[index + 1])
   }
 
-  const spanX = Math.max(.001, maxX - minX)
-  const spanY = Math.max(.001, maxY - minY)
+  const spanX = Math.max(0.001, maxX - minX)
   const color = new Color()
   const colors = new Float32Array(shape.length)
   for (let index = 0; index < shape.length; index += 3) {
     const nx = (shape[index] - minX) / spanX
-    const ny = (shape[index + 1] - minY) / spanY
-    const progress = diagonal ? nx * .62 + (1 - ny) * .38 : nx
-    sampleRainbow(progress, color).toArray(colors, index)
+    sampleRainbow(nx, color).toArray(colors, index)
   }
   return colors
 }
 
-function makeColors(unicornShape: Float32Array, heartShape: Float32Array) {
-  const unicorn = sampleShapeColors(unicornShape, true)
-  const heart = sampleShapeColors(heartShape, false)
-  const attribute = new BufferAttribute(unicorn.slice(), 3).setUsage(DynamicDrawUsage)
-  return { unicorn, heart, attribute, current: unicorn }
-}
-
 const smooth = MathUtils.smoothstep
 
-export function FlightParticles({ pose, unicorn, heart, narrow, heartScale, heartY }: {
+export function FlightParticles({
+  pose,
+  heart,
+  narrow,
+  sceneAspect,
+  heartScale,
+  heartY,
+}: {
   pose: FlightPose
-  unicorn: HTMLImageElement
   heart: HTMLImageElement
   narrow: boolean
+  sceneAspect: number
   heartScale: number
   heartY: number
 }) {
-  const points = useRef<Points>(null!)
-  const material = useRef<PointsMaterial>(null!)
-  const count = narrow ? 850 : 1800
-  const shapes = useMemo(() => ({
-    unicorn: sampleInk(unicorn, count),
-    heart: sampleInk(heart, count),
-    cloud: makeCloud(count),
-  }), [unicorn, heart, count])
-  const position = useMemo(() => new BufferAttribute(new Float32Array(count * 3), 3).setUsage(DynamicDrawUsage), [count])
-  const colors = useMemo(() => makeColors(shapes.unicorn, shapes.heart), [shapes.unicorn, shapes.heart])
+  const heroGroup = useRef<Group>(null!)
+  const leftHeroPoints = useRef<Points>(null!)
+  const rightHeroPoints = useRef<Points>(null!)
+  const leftHeroMat = useRef<PointsMaterial>(null!)
+  const rightHeroMat = useRef<PointsMaterial>(null!)
+
+  const closingPoints = useRef<Points>(null!)
+  const closingMat = useRef<PointsMaterial>(null!)
+
+  const count = narrow ? 900 : 1800
+  const shapes = useMemo(() => {
+    const heartPts = sampleInk(heart, count)
+    return {
+      heart: heartPts,
+      cloud: makeCloud(count),
+      colors: new BufferAttribute(sampleShapeColors(heartPts), 3),
+    }
+  }, [heart, count])
+
+  const heroPosition = useMemo(
+    () => new BufferAttribute(new Float32Array(count * 3), 3).setUsage(DynamicDrawUsage),
+    [count],
+  )
+  const closingPosition = useMemo(
+    () => new BufferAttribute(new Float32Array(count * 3), 3).setUsage(DynamicDrawUsage),
+    [count],
+  )
   const dot = useMemo(makeDot, [])
 
   useEffect(() => () => dot.dispose(), [dot])
 
   useFrame(() => {
     const distance = pose.progress * flightLength
-    const closing = distance >= 5.3
-    const opacity = closing
-      ? smooth(distance, 5.3, 5.56) * .96
-      : smooth(distance, .42, .82) * (1 - smooth(distance, 1.13, 1.92)) * .86
-    points.current.visible = opacity > .005
-    if (!points.current.visible) return
 
-    const palette = closing ? colors.heart : colors.unicorn
-    if (colors.current !== palette) {
-      colors.attribute.array.set(palette)
-      colors.attribute.needsUpdate = true
-      colors.current = palette
-      material.current.size = closing ? (narrow ? .07 : .06) : (narrow ? .058 : .05)
+    // 1. Opening Winged Hearts in the Home (#inizio): replace the old 3D unicorns on left & right
+    const heroOpacity = (1 - smooth(distance, 0.35, 1.05)) * 0.94
+    const heroVisible = heroOpacity > 0.005
+    heroGroup.current.visible = heroVisible
+
+    if (heroVisible) {
+      const heroScatter = smooth(distance, 0.18, 0.92)
+      const spread = Math.min(4.85, sceneAspect * (narrow ? 2.55 : 2.95))
+      const baseScale = narrow ? 2.15 : 3.55
+      const currentScale = MathUtils.lerp(baseScale, baseScale * 1.32, heroScatter)
+      const liftY = narrow ? 0.25 : 0.12
+
+      leftHeroPoints.current.position.set(-spread - heroScatter * 0.9, liftY + heroScatter * 0.35, -0.3 - heroScatter * 1.4)
+      rightHeroPoints.current.position.set(spread + heroScatter * 0.9, liftY + heroScatter * 0.35, -0.3 - heroScatter * 1.4)
+      leftHeroPoints.current.rotation.set(0, 0.24 + heroScatter * 0.35, 0.06)
+      rightHeroPoints.current.rotation.set(0, -0.24 - heroScatter * 0.35, -0.06)
+      leftHeroPoints.current.scale.setScalar(currentScale)
+      rightHeroPoints.current.scale.setScalar(currentScale)
+
+      leftHeroMat.current.opacity = heroOpacity
+      rightHeroMat.current.opacity = heroOpacity
+
+      const heroValues = heroPosition.array
+      for (let index = 0; index < heroValues.length; index += 3) {
+        heroValues[index] = MathUtils.lerp(shapes.heart[index], shapes.cloud[index], heroScatter)
+        heroValues[index + 1] = MathUtils.lerp(shapes.heart[index + 1], shapes.cloud[index + 1], heroScatter)
+        heroValues[index + 2] = shapes.cloud[index + 2] * heroScatter
+      }
+      heroPosition.needsUpdate = true
     }
 
-    const scatter = closing ? 1 - smooth(distance, 5.44, 6.06) : smooth(distance, .8, 1.37)
-    const shape = closing ? shapes.heart : shapes.unicorn
-    const scale = closing
-      ? heartScale
-      : MathUtils.lerp(narrow ? 1.35 : 2.45, narrow ? 2 : 3.35, scatter)
-    const storyX = MathUtils.lerp(narrow ? -1.25 : -3.1, narrow ? .05 : .65, scatter)
-    const storyY = MathUtils.lerp(narrow ? 1.35 : .95, narrow ? .8 : .62, scatter)
-    points.current.position.set(
-      closing ? 0 : storyX,
-      closing ? heartY : storyY,
-      closing ? -56.9 : -.42,
-    )
-    points.current.scale.setScalar(scale)
-    material.current.opacity = opacity
+    // 2. Closing Winged Heart at #contatti
+    const closingStart = 6.35
+    const closingOpacity = smooth(distance, closingStart, closingStart + 0.35) * 0.96
+    const closingVisible = closingOpacity > 0.005
+    closingPoints.current.visible = closingVisible
 
-    const values = position.array
-    for (let index = 0; index < values.length; index += 3) {
-      // Every point uses the same destination going forwards or backwards.
-      values[index] = MathUtils.lerp(shape[index], shapes.cloud[index], scatter)
-      values[index + 1] = MathUtils.lerp(shape[index + 1], shapes.cloud[index + 1], scatter)
-      values[index + 2] = shapes.cloud[index + 2] * scatter
+    if (closingVisible) {
+      const scatter = 1 - smooth(distance, closingStart + 0.12, flightLength - 0.22)
+      closingPoints.current.position.set(0, heartY, -56.9)
+      closingPoints.current.scale.setScalar(heartScale)
+      closingMat.current.opacity = closingOpacity
+
+      const values = closingPosition.array
+      for (let index = 0; index < values.length; index += 3) {
+        values[index] = MathUtils.lerp(shapes.heart[index], shapes.cloud[index], scatter)
+        values[index + 1] = MathUtils.lerp(shapes.heart[index + 1], shapes.cloud[index + 1], scatter)
+        values[index + 2] = shapes.cloud[index + 2] * scatter
+      }
+      closingPosition.needsUpdate = true
     }
-    position.needsUpdate = true
   })
 
+  const pointSize = narrow ? 0.062 : 0.054
+
   return (
-    <points ref={points} frustumCulled={false} visible={false} renderOrder={2}>
-      <bufferGeometry>
-        <primitive object={position} attach="attributes-position" />
-        <primitive object={colors.attribute} attach="attributes-color" />
-      </bufferGeometry>
-      <pointsMaterial ref={material} vertexColors size={narrow ? .055 : .047} map={dot} transparent depthWrite={false} />
-    </points>
+    <>
+      <group ref={heroGroup} renderOrder={2}>
+        <points ref={leftHeroPoints} frustumCulled={false}>
+          <bufferGeometry>
+            <primitive object={heroPosition} attach="attributes-position" />
+            <primitive object={shapes.colors} attach="attributes-color" />
+          </bufferGeometry>
+          <pointsMaterial
+            ref={leftHeroMat}
+            vertexColors
+            size={pointSize}
+            map={dot}
+            transparent
+            depthWrite={false}
+          />
+        </points>
+        <points ref={rightHeroPoints} frustumCulled={false}>
+          <bufferGeometry>
+            <primitive object={heroPosition} attach="attributes-position" />
+            <primitive object={shapes.colors} attach="attributes-color" />
+          </bufferGeometry>
+          <pointsMaterial
+            ref={rightHeroMat}
+            vertexColors
+            size={pointSize}
+            map={dot}
+            transparent
+            depthWrite={false}
+          />
+        </points>
+      </group>
+
+      <points ref={closingPoints} frustumCulled={false} visible={false} renderOrder={2}>
+        <bufferGeometry>
+          <primitive object={closingPosition} attach="attributes-position" />
+          <primitive object={shapes.colors} attach="attributes-color" />
+        </bufferGeometry>
+        <pointsMaterial
+          ref={closingMat}
+          vertexColors
+          size={narrow ? 0.07 : 0.06}
+          map={dot}
+          transparent
+          depthWrite={false}
+        />
+      </points>
+    </>
   )
 }
